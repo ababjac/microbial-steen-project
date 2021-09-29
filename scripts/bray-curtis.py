@@ -7,52 +7,45 @@ import matplotlib.colors as col
 import matplotlib.cm as cm
 import itertools
 
-#-----------------------------------------------------------------------------------------------------------#
-
-def get_dataset_partitions_pd(df, train_split=0.8, val_split=0.1, test_split=0.1):
-    assert (train_split + test_split + val_split) == 1
-
-    # Specify seed to always have the same split distribution between runs
-    df_sample = df.sample(frac=1, random_state=5)
-    indices_or_sections = [int(train_split * len(df)), int((1 - val_split - test_split) * len(df))]
-
-    train_ds, val_ds, test_ds = np.split(df_sample, indices_or_sections)
-
-    return train_ds, val_ds, test_ds
-
-#-----------------------------------------------------------------------------------------------------------#
-
 print('Reading data...')
 df = pd.read_csv('metatranscriptomes/salazar_profiles/OM_RGC_genus_KO_profiles_metat_rarefy.tsv')
-#meta = pd.read_csv('metatranscriptomes/salazar_profiles/salazar_metadata.csv', encoding='ISO-8859-1')
-#convert = pd.read_csv('metatranscriptomes/salazar_profiles/metat_to_metag.csv')
+meta = pd.read_csv('metatranscriptomes/salazar_profiles/salazar_metadata.csv', encoding='ISO-8859-1')
+convert = pd.read_csv('metatranscriptomes/salazar_profiles/metat_to_metag.csv')
 
 #df_subset = df.sample(n=5000, random_state=5) #for testing purposes use fewer sample
 
-#subset data into train, validate, test
-train, validate, test = get_dataset_partitions_pd(df, train_split=0.5, val_split=0.25, test_split=0.25)
-
 # for elem in df.columns.tolist():#meta['site']:
 #     print(elem in convert['site'].values.tolist())
+
+#print(df.columns)
+
+#figure out which columns do not have metadata and exclude
+exclude = [col for col in df.columns.tolist() if col not in convert['metat'].values.tolist()]
+exclude.remove('KO')
+#print(exclude)
+
+# print('Factoring out sites based on depth...')
+# meta['Depth.nominal'].replace('nan', np.float64('NaN'))
+
+print('Condensing df by KO...')
+df = df.loc[:, ~df.columns.isin(exclude)]
+condensed = df.groupby('KO', as_index=False).sum()
+#print(condensed)
 
 #normalize by totals from columns
 print('Normalizing df...')
 norm_df = pd.DataFrame()
 
-for c in train.columns:
+for c in condensed.columns:
     if c.__contains__('TARA'):
-        total = train.loc[:, c].sum()
+        total = condensed.loc[:, c].sum()
 
-        if total == 0:
-            #norm_df[c] = df[c] #all values are 0 cannot divide --  no real point in predicting these sites
+        if total == 0: #skip because there is no point in predicting these sites
             continue
 
-        #if meta[convert['metat']['site' == c]]['Depth.Min'] >= 20: #factor ou things at deep depths
-            #continue
+        norm_df[c] = condensed[c] / total
 
-        norm_df[c] = train[c] / total
-
-#print(len(norm_df))
+#print(norm_df)
 
 
 #calculate upper triangular distance matrix

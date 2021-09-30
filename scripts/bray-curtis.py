@@ -117,7 +117,7 @@ clusters = cut_tree(Z, n_clusters=len(norm_df.columns.tolist()))
 clusters = list(itertools.chain(*clusters.tolist()))
 #print(clusters)
 
-train['cluster_id'] = clusters
+condensed['cluster_id'] = clusters
 
 # data = {'Gene' : genes, 'cluster_id' : list(clusters)}
 # df = pd.DataFrame(data)
@@ -129,7 +129,7 @@ OUT = 'files/clusters/unsupervised/full.txt'
 clusters = []
 singleton_cluster = []
 for i in range(1, length+1):
-    l = train['KO'][train['cluster_id'] == i].values.tolist()
+    l = condensed['KO'][condensed['cluster_id'] == i].values.tolist()
 
     if len(l) == 1:
         singleton_cluster.append(l[0])

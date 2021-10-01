@@ -40,6 +40,7 @@ data = pd.merge(meta, df_transposed, on='site', how='inner')
 
 print('Splitting data...')
 features = data.loc[:, ~data.columns.isin(['site'])]
+features = pd.get_dummies(features)
 labels = data.loc[:, 'site']
 
 X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3,random_state=5) # 70% training and 30% test

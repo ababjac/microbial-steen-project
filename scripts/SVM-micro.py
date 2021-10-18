@@ -1,57 +1,72 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn import svm, metrics
 from sklearn.model_selection import train_test_split
 
+def plot_confusion_matrix(y_pred, y_actual, title, filename):
+    cf_matrix = metrics.confusion_matrix(y_actual, y_pred)
+    if len(cf_matrix) != 2: #if it predicts perfectly then confusion matrix returns incorrect form
+        val = cf_matrix[0][0]
+        tmp = [val, 0]
+        cf_matrix = np.array([tmp, [0, 0]])
+
+    #print(cf_matrix)
+
+    ax = sns.heatmap(cf_matrix, annot=True, cmap='Blues')
+
+    ax.set_title(title+'\n\n');
+    ax.set_xlabel('\nPredicted Values')
+    ax.set_ylabel('Actual Values\n');
+
+    ## Ticket labels - List must be in alphabetical order
+    ax.xaxis.set_ticklabels(['False','True'])
+    ax.yaxis.set_ticklabels(['False','True'])
+
+    ## Display the visualization of the Confusion Matrix.
+    plt.savefig('images/confusion-matrix/'+filename)
+    plt.close()
+
 print('Reading data...')
-df = pd.read_csv('metatranscriptomes/salazar_profiles/OM_RGC_genus_KO_profiles_metat_rarefy.tsv')
-meta = pd.read_csv('metatranscriptomes/salazar_profiles/salazar_metadata.csv', encoding='ISO-8859-1')
-convert = pd.read_csv('metatranscriptomes/salazar_profiles/metat_to_metag.csv')
+data = pd.read_csv('files/data/condensedKO_features.csv', index_col=0)
+labels = pd.read_csv('files/data/labels.csv', index_col=0)
 
-convert_df_to_meta = dict(zip(convert['metat'].values.tolist(), convert['site'].values.tolist())) #df_locations -> meta_locations
-convert_meta_to_df = dict(zip(convert['site'].values.tolist(), convert['metat'].values.tolist())) #meta_locations -> df_locations
-
-print('Data processing...')
-exclude = [col for col in df.columns.tolist() if col not in convert['metat'].values.tolist()]
-df = df.loc[:, ~df.columns.isin(exclude)]
-
-norm_df = pd.DataFrame()
-#normalize abundances
-for c in df.columns:
-    if c.__contains__('TARA'):
-        total = df.loc[:, c].sum()
-
-        if total == 0: #skip because there is no point in predicting these sites
-            continue
-
-        norm_df[c] = df[c] / total
-
-
-df_transposed = norm_df.T
-df_transposed.reset_index(inplace=True)
-df_transposed = df_transposed.rename(columns = {'index':'site'})
-
-for i in range(0, len(df_transposed)):
-    df_transposed['site'][i] = convert_df_to_meta[df_transposed['site'][i]]
-
-data = pd.merge(meta, df_transposed, on='site', how='inner')
 #print(data)
+#print(labels)
+
+sites = data['site']
+#print(sites)
 
 print('Splitting data...')
 features = data.loc[:, ~data.columns.isin(['site'])]
 features = pd.get_dummies(features)
-labels = data.loc[:, 'site']
+#print(features)
+labels = labels.loc[:, ~labels.columns.isin(['site'])]
+#print(labels)
 
-X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3,random_state=5) # 70% training and 30% test
+print('Cleaning features...')
+#print([features[col].isna().sum() for col in features.columns if features[col].isna().sum() != 0])
+remove = [col for col in features.columns if features[col].isna().sum() != 0]
+features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 
-print('Building model...')
-clf = svm.SVC(kernel='linear')
-clf.fit(X_train, y_train)
+print()
+for label in labels.columns:
+    X_train, X_test, y_train, y_test = train_test_split(features, labels[label], test_size=0.3,random_state=5) # 70% training and 30% test
 
-print('Predicting on test data...')
-y_pred = clf.predict(X_test)
+    print('Building model for label:', label)
+    clf = svm.SVC(kernel='linear')
+    clf.fit(X_train, y_train)
 
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-print("Precision:",metrics.precision_score(y_test, y_pred))
-print("Recall:",metrics.recall_score(y_test, y_pred))
+    print('Predicting on test data for label:', label)
+    y_pred = clf.predict(X_test)
+
+    print('Calculating metrics for:', label)
+    # print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    # print("Precision:",metrics.precision_score(y_test, y_pred))
+    # print("Recall:",metrics.recall_score(y_test, y_pred))
+
+    print('Plotting:', label)
+    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+
+    print()

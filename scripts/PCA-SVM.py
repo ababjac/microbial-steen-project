@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import svm, metrics
 from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
     cf_matrix = metrics.confusion_matrix(y_actual, y_pred)
@@ -25,7 +26,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
     ax.yaxis.set_ticklabels(['False','True'])
 
     ## Display the visualization of the Confusion Matrix.
-    plt.savefig('images/confusion-matrix/std-SVM/'+filename)
+    plt.savefig('images/confusion-matrix/PCA-SVM/'+filename)
     plt.close()
 
 print('Reading data...')
@@ -54,9 +55,15 @@ remove = [col for col in features.columns if features[col].isna().sum() != 0]
 
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 
+pca_model = PCA(n_components=0.999)
+pca_features = pca_model.fit_transform(features)
+
+pca_features_df = pd.DataFrame(pca_features)
+print(pca_features_df)
+
 print()
 for label in labels.columns:
-    X_train, X_test, y_train, y_test = train_test_split(features, labels[label], test_size=0.3,random_state=5) # 70% training and 30% test
+    X_train, X_test, y_train, y_test = train_test_split(pca_features_df, labels[label], test_size=0.3,random_state=5) # 70% training and 30% test
 
     print('Building model for label:', label)
     clf = svm.SVC(kernel='linear')

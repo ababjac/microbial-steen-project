@@ -47,7 +47,7 @@ labels = labels.loc[:, ~labels.columns.isin(['site'])]
 
 print('Cleaning features...')
 #print([features[col].isna().sum() for col in features.columns if features[col].isna().sum() != 0])
-remove = [col for col in features.columns if features[col].isna().sum() != 0]
+remove = [col for col in features.columns if features[col].isna().sum() != 0 or col.__contains__('Ocean.region')]
 # fill.remove('PAR.PC')
 # features = features.loc[:, ~features.columns.isin(['PAR.PC'])] #remove columns with too many missing values
 # features.fillna(method='')

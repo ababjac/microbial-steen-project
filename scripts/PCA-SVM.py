@@ -37,15 +37,17 @@ def plot_pca(colors, pca, components, filename):
         for i, var in enumerate(pca.explained_variance_ratio_ * 100)
     }
 
+    print(labels)
     fig = px.scatter_matrix(
         components,
         labels=labels,
-        dimensions=range(4),
+        dimensions=range(9),
         color=colors
     )
 
     fig.update_traces(diagonal_visible=False)
-    fig.show()
+    fig.write_image(filename)
+
 
 print('Reading data...')
 data = pd.read_csv('files/data/condensedKO_features.csv', index_col=0)
@@ -75,10 +77,11 @@ remove = [col for col in features.columns if features[col].isna().sum() != 0 or 
 
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 
-pca_model = PCA(n_components=0.99) #account for 99% of variability
+#pca_model = PCA(n_components=0.99) #account for 99% of variability
+pca_model = PCA(n_components=9) #make 9 components for 9 ocean regions
 pca_features = pca_model.fit_transform(features)
 
-#plot_pca(master_labels, pca_model, pca_features, 'images/PCA/nc_4.png')
+plot_pca(master_labels, pca_model, pca_features, 'images/PCA/nc_9.png')
 
 #pca_features_df = pd.DataFrame(pca_features)
 #print(pca_features_df)

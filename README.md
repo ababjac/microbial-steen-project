@@ -20,14 +20,14 @@ Phase 1: Preliminary analysis using the TARA data completed. The PowerPoint slid
 
 Phase 2: In progress. Recreate a pipeline similar to the TARA analysis using the annoted genomes from the GEM dataset provided by Taylor Royalty. End goal of predicting cultured/uncultured microbes and understanding useful features derived from the analysis.
 
-Current conclusions
+Current Conclusions:
 
-TARA:
+TARA -- 
 - TARA is easily modeled and represented by both PCA and autoencoders
 - Both perform well (average 90% accuracy) when predicting the ocean region
 - AE do a slightly better job representing the data
 
-GEM:
+GEM -- 
 - Data is large and noisy
 - Difficult to represent this with few dimensions but autoencoders do a good job reducing noise and sparsity in our features
 - Both PCA+AE run with SVM do not predict well (one is 50/50 the other is all false positives)

@@ -7,7 +7,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 import plotly.express as px
 import chardet
-from imblearn.over_sampling import SMOTE
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
     cf_matrix = metrics.confusion_matrix(y_actual, y_pred)
@@ -73,13 +72,13 @@ def normalize_abundances(df):
 
 print('Reading data...')
 metadata = pd.read_csv('files/data/GEM_metadata.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/GEM_metadata.tsv'))
-annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
-annot_features = normalize_abundances(annot_features)
+#annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
+#annot_features = normalize_abundances(annot_features)
 path_features = pd.read_csv('files/data/pathway_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/pathway_features_counts_wide.tsv'))
 path_features = normalize_abundances(path_features)
 
 data = pd.merge(metadata, path_features, on='genome_id', how='inner')
-data = pd.merge(data, annot_features, on='genome_id', how='inner')
+#data = pd.merge(data, annot_features, on='genome_id', how='inner')
 #random_indexes = np.random.choice(len(data), size=5000, replace=False)
 #data = data.iloc[random_indexes]
 #print(len(data))
@@ -104,33 +103,33 @@ pca_model = PCA(n_components=10) #account for 99% of variability
 pca_features = pca_model.fit_transform(features)
 #print(pca_features)
 
-plot_pca(label_strings, pca_model, pca_features, 'images/PCA/GEM/nc_'+str(len(pca_features))+'.png', len(pca_features))
+#plot_pca(label_strings, pca_model, pca_features, 'images/PCA/GEM/nc_'+str(len(pca_features))+'.png', len(pca_features))
 #
-# pca_features_df = pd.DataFrame(pca_features)
-#print(pca_features_df)
+pca_features_df = pd.DataFrame(pca_features)
+print(pca_features.shape())
+# print(pca_features_df)
 
 
-# sm = SMOTE(k_neighbors=1, random_state=55)
 
-#print()
-#for label in labels.columns:
-# label = 'cultured'
-# X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5, shuffle=True, stratify=labels) # 70% training and 30% test
-# X_train, y_train = sm.fit_resample(X_train, y_train)
-#
-# print('Building model for label:', label)
-# clf = svm.SVC(kernel='linear')
-# clf.fit(X_train, y_train)
-#
-# print('Predicting on test data for label:', label)
-# y_pred = clf.predict(X_test)
-#
-# print('Calculating metrics for:', label)
-# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-# print("Precision:",metrics.precision_score(y_test, y_pred))
-# print("Recall:",metrics.recall_score(y_test, y_pred))
-#
-# print('Plotting:', label)
-# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM_sub5000.png')
-#
-# print()
+print()
+
+label = 'cultured'
+
+X_train, X_test, y_train, y_test = train_test_split(pca_features_df, labels, test_size=0.3, random_state=5, shuffle=True, stratify=labels) # 70% training and 30% test
+
+print('Building model for label:', label)
+clf = svm.SVC(kernel='linear')
+clf.fit(X_train, y_train)
+
+print('Predicting on test data for label:', label)
+y_pred = clf.predict(X_test)
+
+print('Calculating metrics for:', label)
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+print("Precision:",metrics.precision_score(y_test, y_pred))
+print("Recall:",metrics.recall_score(y_test, y_pred))
+
+print('Plotting:', label)
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-PCA.png')
+
+print()

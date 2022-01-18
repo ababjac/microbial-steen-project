@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras as ks
 import chardet
+from hyperopt import hp, tpe, fmin, STATUS_OK, Trials
 
 def scale(train, test):
     xtrain_scaled = pd.DataFrame(MinMaxScaler().fit_transform(train), columns=train.columns)
@@ -144,3 +145,30 @@ print('Plotting:', label)
 plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100.png')
 
 print()
+
+#going to be adding in hyperparameter tuning for automated tuning of models
+#would like to use Bayesian Inference as opposed to Grid or Randomized Search
+
+#example from here: https://towardsdatascience.com/hyperparameter-tuning-for-machine-learning-models-1b80d783b946
+# def accuracy_model(params):
+#    clf = RandomForestClassifier(**params)
+#    return cross_val_score(clf, X_train, y_train).mean()
+#
+# param_space = {'max_depth': hp.choice(
+#     'max_depth', range(10,100)),
+#     'max_features': hp.uniform('max_features', 0.1,1),
+#     'n_estimators': hp.choice('n_estimators', range(50,500)),
+#     'min_samples_leaf': hp.choice('min_samples_leaf',range(3,5)),
+#     'min_samples_split': hp.choice('min_samples_split',range(2,10)),
+#     'criterion': hp.choice('criterion', ["gini", "entropy"])}
+#
+# best = 0
+# def f(params):
+#     global best
+#     acc = accuracy_model(params)
+#     if acc > best:
+#        best = acc
+#     return {'loss': -acc, 'status': STATUS_OK}Trials = Trials()
+#
+# best_params = fmin(f, param_space , algo=tpe.suggest,max_evals=500, trials= Trials)print('New best:', best, best_params)
+# print(best_params)

@@ -91,9 +91,11 @@ ids = data['genome_id']
 label_strings = data['cultured.status']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])]
+#features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])] #original way
+features = data.loc[:, ~data.columns.isin(list(path_features.columns)+['genome_id', 'cultured.status'])] #
+#features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'genome_length', 'completeness', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'taxonomic.dist'])] #original way
 features = pd.get_dummies(features)
-#print(features)
+#print(features.columns)
 
 labels = pd.get_dummies(label_strings)['cultured']
 #print(labels)
@@ -101,6 +103,7 @@ labels = pd.get_dummies(label_strings)['cultured']
 print('Cleaning features...')
 remove = [col for col in features.columns if features[col].isna().sum() != 0]
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
+print(features)
 
 print()
 
@@ -111,7 +114,7 @@ X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=
 X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
 print('Building autoencoder model...')
-autoencoder = Autoencoder(100)
+autoencoder = Autoencoder(50)
 autoencoder.compile(loss='mae', optimizer='adam')
 
 try:
@@ -141,6 +144,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE50-nopath.png')
 
 print()

@@ -133,6 +133,7 @@ ids = vectorized['genome_id']
 label_strings = vectorized['cultured.status']
 
 features = vectorized.loc[:, ~vectorized.columns.isin(['genome_id', 'cultured.status'])]
+#features = vectorized.loc[:, ~vectorized.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'genome_length', 'completeness', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'taxonomic.dist'])] #original way
 features = pd.get_dummies(features)
 #print(features)
 
@@ -154,7 +155,7 @@ X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=
 X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
 print('Building autoencoder model...')
-autoencoder = Autoencoder(100)
+autoencoder = Autoencoder(50)
 autoencoder.compile(loss='mae', optimizer='adam')
 
 try:
@@ -184,6 +185,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100-vec.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE50-vec-nometa.png')
 
 print()

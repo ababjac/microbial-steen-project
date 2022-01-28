@@ -94,7 +94,7 @@ def run_analyses(features, labels, remove_string):
     X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
     print('Building autoencoder model...')
-    autoencoder = Autoencoder(50)
+    autoencoder = Autoencoder(100)
     autoencoder.compile(loss='mae', optimizer='adam')
 
     try:
@@ -124,7 +124,7 @@ def run_analyses(features, labels, remove_string):
     print("Recall:",metrics.recall_score(y_test, y_pred))
 
     print('Plotting:', label)
-    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE50-no'+remove_string+'.png')
+    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100-no'+remove_string+'.png')
 
     print()
 
@@ -144,7 +144,7 @@ label_strings = data['cultured.status']
 
 print('Splitting data...')
 #features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])] #original way
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level'])] #
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])] #
 #remove = ['culture.level', 'genome_length', 'completeness', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 #combos = list(more_itertools.powerset(remove))
 #print(len(combos))
@@ -152,7 +152,7 @@ features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'cult
 features = pd.get_dummies(features)
 labels = pd.get_dummies(label_strings)['cultured']
 
-run_analyses(features, labels, 'culturelevel')
+run_analyses(features, labels, 'taxonomy-noculturelevel')
 # for l in combos:
 #     s = ''
 #     for elem in l:

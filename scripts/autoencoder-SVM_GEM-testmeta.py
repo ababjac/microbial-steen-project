@@ -8,6 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras as ks
 import chardet
 import more_itertools
+from imblearn.over_sampling import SMOTE
 
 def scale(train, test):
     xtrain_scaled = pd.DataFrame(MinMaxScaler().fit_transform(train), columns=train.columns)
@@ -58,7 +59,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
     ## Display the visualization of the Confusion Matrix.
     plt.tight_layout()
     #print('saving image')
-    plt.savefig('images/confusion-matrix/GEM/nometa/'+filename)
+    plt.savefig('images/confusion-matrix/GEM/nometa/SMOTE/'+filename)
     plt.close()
 
 class Autoencoder(ks.models.Model):
@@ -83,15 +84,17 @@ def run_analyses(features, labels, remove_string):
     print('Cleaning features...')
     remove = [col for col in features.columns if features[col].isna().sum() != 0]
     features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
-    print(features)
+    #print(features)
 
     print()
 
     label = 'cultured'
 
     print('Scaling data...')
+    sm = SMOTE(k_neighbors=1, random_state=55)
     X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
-    X_train_scaled, X_test_scaled = scale(X_train, X_test)
+    X_test_res, y_test_res = sm.fit_resample(X_test, y_test)
+    X_train_scaled, X_test_scaled = scale(X_train, X_test_res)
 
     print('Building autoencoder model...')
     autoencoder = Autoencoder(100)
@@ -119,12 +122,12 @@ def run_analyses(features, labels, remove_string):
     y_pred = clf.predict(AE_test)
 
     print('Calculating metrics for:', label)
-    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    print("Precision:",metrics.precision_score(y_test, y_pred))
-    print("Recall:",metrics.recall_score(y_test, y_pred))
+    print("Accuracy:",metrics.accuracy_score(y_test_res, y_pred))
+    print("Precision:",metrics.precision_score(y_test_res, y_pred))
+    print("Recall:",metrics.recall_score(y_test_res, y_pred))
 
     print('Plotting:', label)
-    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100-no'+remove_string+'.png')
+    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test_res, title=label, filename=label+'_CM-AE100-no'+remove_string+'.png')
 
     print()
 
@@ -144,7 +147,7 @@ label_strings = data['cultured.status']
 
 print('Splitting data...')
 #features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])] #original way
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])] #
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'genome_length', 'completeness', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])] #
 #remove = ['culture.level', 'genome_length', 'completeness', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 #combos = list(more_itertools.powerset(remove))
 #print(len(combos))
@@ -152,7 +155,7 @@ features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'cult
 features = pd.get_dummies(features)
 labels = pd.get_dummies(label_strings)['cultured']
 
-run_analyses(features, labels, 'taxonomy-noculturelevel')
+run_analyses(features, labels, 'culturelevel')
 # for l in combos:
 #     s = ''
 #     for elem in l:

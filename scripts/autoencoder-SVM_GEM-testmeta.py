@@ -134,20 +134,20 @@ def run_analyses(features, labels, remove_string):
 
 print('Reading data...')
 metadata = pd.read_csv('files/data/GEM_metadata.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/GEM_metadata.tsv'))
-# annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
-# annot_features = normalize_abundances(annot_features)
+annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
+annot_features = normalize_abundances(annot_features)
 path_features = pd.read_csv('files/data/pathway_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/pathway_features_counts_wide.tsv'))
 path_features = normalize_abundances(path_features)
 
 data = pd.merge(metadata, path_features, on='genome_id', how='inner')
-#data = pd.merge(data, annot_features, on='genome_id', how='inner')
+data = pd.merge(data, annot_features, on='genome_id', how='inner')
 
 ids = data['genome_id']
 label_strings = data['cultured.status']
 
 print('Splitting data...')
 #features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])] #original way
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'genome_length', 'completeness', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species'])] #
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'completeness'])] #
 #remove = ['culture.level', 'genome_length', 'completeness', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species']
 #combos = list(more_itertools.powerset(remove))
 #print(len(combos))
@@ -155,7 +155,7 @@ features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'cult
 features = pd.get_dummies(features)
 labels = pd.get_dummies(label_strings)['cultured']
 
-run_analyses(features, labels, 'metadata')
+run_analyses(features, labels, 'culturelevel-notaxonomy-nocompleteness-includeannot')
 # for l in combos:
 #     s = ''
 #     for elem in l:

@@ -155,7 +155,7 @@ features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'cult
 features = pd.get_dummies(features)
 labels = pd.get_dummies(label_strings)['cultured']
 
-run_analyses(features, labels, 'culturelevel')
+run_analyses(features, labels, 'metadata')
 # for l in combos:
 #     s = ''
 #     for elem in l:

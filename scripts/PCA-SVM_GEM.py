@@ -28,7 +28,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
     ax.yaxis.set_ticklabels(['False','True'])
 
     ## Display the visualization of the Confusion Matrix.
-    plt.savefig('images/confusion-matrix/GEM/'+filename)
+    plt.savefig('images/confusion-matrix/GEM/PCA/'+filename)
     plt.close()
 
 def plot_pca(colors, pca, components, filename, num):
@@ -72,13 +72,15 @@ def normalize_abundances(df):
 
 print('Reading data...')
 metadata = pd.read_csv('files/data/GEM_metadata.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/GEM_metadata.tsv'))
-#annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
-#annot_features = normalize_abundances(annot_features)
+annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
+annot_features = normalize_abundances(annot_features)
 path_features = pd.read_csv('files/data/pathway_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/pathway_features_counts_wide.tsv'))
 path_features = normalize_abundances(path_features)
 
 data = pd.merge(metadata, path_features, on='genome_id', how='inner')
 #data = pd.merge(data, annot_features, on='genome_id', how='inner')
+
+#choose a subset for testing purposes
 #random_indexes = np.random.choice(len(data), size=5000, replace=False)
 #data = data.iloc[random_indexes]
 #print(len(data))
@@ -90,29 +92,28 @@ label_strings = data['cultured.status']
 print('Splitting data...')
 features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])]
 features = pd.get_dummies(features)
-#print(features)
 
 labels = pd.get_dummies(label_strings)['cultured']
-#print(labels)
 
 print('Cleaning features...')
 remove = [col for col in features.columns if features[col].isna().sum() != 0]
-features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
+features = features.loc[:, ~features.columns.isin(remove)] #remove columns with missing values
 
-pca_model = PCA(n_components=10) #account for 99% of variability
+print('Running PCA...')
+#pca_model = PCA(n_components=100) #trying to match autoencoder model in # of "layers"
+pca_model = PCA(n_components=0.9) #Whatever is necessary to capture 90% of variability
 pca_features = pca_model.fit_transform(features)
-#print(pca_features)
 
 #plot_pca(label_strings, pca_model, pca_features, 'images/PCA/GEM/nc_'+str(len(pca_features))+'.png', len(pca_features))
-#
+
 pca_features_df = pd.DataFrame(pca_features)
-print(pca_features.shape())
-# print(pca_features_df)
+print(pca_features.shape)
 
 
 
 print()
 
+#predict using SVM
 label = 'cultured'
 
 X_train, X_test, y_train, y_test = train_test_split(pca_features_df, labels, test_size=0.3, random_state=5, shuffle=True, stratify=labels) # 70% training and 30% test

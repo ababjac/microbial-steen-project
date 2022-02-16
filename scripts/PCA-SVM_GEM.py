@@ -98,16 +98,19 @@ labels = pd.get_dummies(label_strings)['cultured']
 print('Cleaning features...')
 remove = [col for col in features.columns if features[col].isna().sum() != 0]
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with missing values
+features = features.values
+
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5, shuffle=True, stratify=labels) # 70% training and 30% test
 
 print('Running PCA...')
 #pca_model = PCA(n_components=100) #trying to match autoencoder model in # of "layers"
-pca_model = PCA(n_components=0.9) #Whatever is necessary to capture 90% of variability
-pca_features = pca_model.fit_transform(features)
+pca_model = PCA(n_components=10) #Whatever is necessary to capture 90% of variability
+pca_features = pca_model.fit_transform(X_train)
 
-#plot_pca(label_strings, pca_model, pca_features, 'images/PCA/GEM/nc_'+str(len(pca_features))+'.png', len(pca_features))
+plot_pca(label_strings, pca_model, pca_features, 'images/PCA/GEM/nc_'+str(len(pca_features))+'.png', len(pca_features))
 
-pca_features_df = pd.DataFrame(pca_features)
-print(pca_features.shape)
+#pca_features_df = pd.DataFrame(pca_features)
+#print(pca_features.shape)
 
 
 
@@ -116,11 +119,9 @@ print()
 #predict using SVM
 label = 'cultured'
 
-X_train, X_test, y_train, y_test = train_test_split(pca_features_df, labels, test_size=0.3, random_state=5, shuffle=True, stratify=labels) # 70% training and 30% test
-
 print('Building model for label:', label)
 clf = svm.SVC(kernel='linear')
-clf.fit(X_train, y_train)
+clf.fit(pca_features, y_train)
 
 print('Predicting on test data for label:', label)
 y_pred = clf.predict(X_test)

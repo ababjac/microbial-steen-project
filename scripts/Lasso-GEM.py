@@ -1,14 +1,16 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.linear_model import Lasso
 import seaborn as sns
 from sklearn import svm, metrics
-from sklearn.model_selection import train_test_split
-from sklearn.decomposition import PCA
-import plotly.express as px
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.pipeline import Pipeline
 import chardet
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
+    plt.gca().set_aspect('equal')
     cf_matrix = metrics.confusion_matrix(y_actual, y_pred)
     if len(cf_matrix) != 2: #if it predicts perfectly then confusion matrix returns incorrect form
         val = cf_matrix[0][0]
@@ -28,30 +30,18 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
     ax.yaxis.set_ticklabels(['False','True'])
 
     ## Display the visualization of the Confusion Matrix.
-    plt.savefig('images/confusion-matrix/GEM/PCA/'+filename)
+    plt.tight_layout()
+    plt.savefig('images/confusion-matrix/GEM/Lasso/'+filename)
     plt.close()
-
-def plot_pca(colors, pca, components, filename, num):
-
-    labels = {
-        str(i): f"PC {i+1} ({var:.1f}%)"
-        for i, var in enumerate(pca.explained_variance_ratio_ * 100)
-    }
-
-    print(labels)
-    fig = px.scatter_matrix(
-        components,
-        labels=labels,
-        dimensions=range(num),
-        color=colors
-    )
-
-    fig.update_traces(diagonal_visible=False)
-    fig.write_image(filename)
 
 def detect_encoding(file):
     guess = chardet.detect(open(file, 'rb').read())['encoding']
     return guess
+
+def scale(train, test):
+    xtrain_scaled = pd.DataFrame(StandardScaler().fit_transform(train), columns=train.columns)
+    xtest_scaled = pd.DataFrame(StandardScaler().fit_transform(test), columns=test.columns)
+    return xtrain_scaled, xtest_scaled
 
 def normalize_abundances(df):
     norm_df = pd.DataFrame()
@@ -78,50 +68,65 @@ path_features = pd.read_csv('files/data/pathway_features_counts_wide.tsv', sep='
 path_features = normalize_abundances(path_features)
 
 data = pd.merge(metadata, path_features, on='genome_id', how='inner')
-#data = pd.merge(data, annot_features, on='genome_id', how='inner')
-
-#choose a subset for testing purposes
-#random_indexes = np.random.choice(len(data), size=5000, replace=False)
-#data = data.iloc[random_indexes]
-#print(len(data))
-#print(data.columns)
+data = pd.merge(data, annot_features, on='genome_id', how='inner')
 
 ids = data['genome_id']
 label_strings = data['cultured.status']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])]
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])] #get rid of labels
 features = pd.get_dummies(features)
+#print(features)
 
 labels = pd.get_dummies(label_strings)['cultured']
+#print(labels)
 
 print('Cleaning features...')
 remove = [col for col in features.columns if features[col].isna().sum() != 0]
-features = features.loc[:, ~features.columns.isin(remove)] #remove columns with missing values
-features = features.values
-
-
-print('Running PCA...')
-#pca_model = PCA(n_components=100) #trying to match autoencoder model in # of "layers"
-pca_model = PCA(n_components=10) #Whatever is necessary to capture 90% of variability
-pca_features = pca_model.fit_transform(features)
-
-#plot_pca(label_strings, pca_model, pca_features, 'images/PCA/GEM/nc_'+str(len(pca_features))+'.png', len(pca_features))
-
-#pca_features_df = pd.DataFrame(pca_features)
-#print(pca_features.shape)
-
-
+features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
+#print(features)
 
 print()
 
-#predict using SVM
 label = 'cultured'
 
-X_train, X_test, y_train, y_test = train_test_split(pca_features, labels, test_size=0.3, random_state=5, shuffle=True, stratify=labels) # 70% training and 30% test
+print('Scaling data...')
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
+X_train_scaled, X_test_scaled = scale(X_train, X_test)
+
+print('Doing feature selection with Lasso...')
+pipeline = Pipeline([('scaler',StandardScaler()), ('model',Lasso())])
+search = GridSearchCV(pipeline,
+                      {'model__alpha':np.arange(0.1,10,0.1)},
+                      cv = 5, scoring="neg_mean_squared_error",verbose=3
+                      )
+search.fit(X_train, y_train)
+coefficients = search.best_estimator_.named_steps['model'].coef_
+importance = np.abs(coefficients)
+remove = np.array(features.columns)[importance > 0]
+
+X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
+X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
+
+print('Predicting with SVM...')
+
+
+params = {
+    'C': [0.1, 1, 10, 100, 1000],
+    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+    'kernel': ['rbf', 'linear']
+}
+
+clf = GridSearchCV(
+    estimator=svm.SVC(),
+    param_grid=params,
+    cv=5,
+    n_jobs=5,
+    verbose=3
+)
 
 print('Building model for label:', label)
-clf = svm.SVC(kernel='linear')
+#print(AE_train.shape())
 clf.fit(X_train, y_train)
 
 print('Predicting on test data for label:', label)
@@ -133,6 +138,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-PCA.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
 
 print()

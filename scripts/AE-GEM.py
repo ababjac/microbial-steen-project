@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import svm, metrics
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras as ks
 import chardet
@@ -56,7 +56,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     ## Display the visualization of the Confusion Matrix.
     plt.tight_layout()
-    plt.savefig('images/confusion-matrix/GEM/'+filename)
+    plt.savefig('images/confusion-matrix/GEM/AE/'+filename)
     plt.close()
 
 class Autoencoder(ks.models.Model):
@@ -79,21 +79,19 @@ class Autoencoder(ks.models.Model):
 
 print('Reading data...')
 metadata = pd.read_csv('files/data/GEM_metadata.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/GEM_metadata.tsv'))
-# annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
-# annot_features = normalize_abundances(annot_features)
+annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
+annot_features = normalize_abundances(annot_features)
 path_features = pd.read_csv('files/data/pathway_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/pathway_features_counts_wide.tsv'))
 path_features = normalize_abundances(path_features)
 
 data = pd.merge(metadata, path_features, on='genome_id', how='inner')
-#data = pd.merge(data, annot_features, on='genome_id', how='inner')
+data = pd.merge(data, annot_features, on='genome_id', how='inner')
 
 ids = data['genome_id']
 label_strings = data['cultured.status']
 
 print('Splitting data...')
-#features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])] #original way
-features = data.loc[:, ~data.columns.isin(list(path_features.columns)+['genome_id', 'cultured.status'])] #
-#features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'genome_length', 'completeness', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'taxonomic.dist'])] #original way
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'completeness'])] #remove metadata
 features = pd.get_dummies(features)
 #print(features.columns)
 
@@ -114,7 +112,7 @@ X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=
 X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
 print('Building autoencoder model...')
-autoencoder = Autoencoder(50)
+autoencoder = Autoencoder(100)
 autoencoder.compile(loss='mae', optimizer='adam')
 
 try:
@@ -130,9 +128,22 @@ AE_test.add_prefix('feature_')
 
 print('Predicting with SVM...')
 
+params = {
+    'C': [0.1, 1, 10, 100, 1000],
+    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+    'kernel': ['rbf', 'linear']
+}
+
+clf = GridSearchCV(
+    estimator=svm.SVC(),
+    param_grid=params,
+    cv=5,
+    n_jobs=5,
+    verbose=3
+)
+
 print('Building model for label:', label)
 #print(AE_train.shape())
-clf = svm.SVC(kernel='linear')
 clf.fit(AE_train, y_train)
 
 print('Predicting on test data for label:', label)
@@ -144,6 +155,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE50-nopath.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100.png')
 
 print()

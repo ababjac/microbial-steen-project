@@ -3,14 +3,36 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import svm, metrics
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras as ks
-from imblearn.over_sampling import SMOTE
+import chardet
 
-def scale(train):
+def scale(train, test):
     xtrain_scaled = pd.DataFrame(MinMaxScaler().fit_transform(train), columns=train.columns)
-    return xtrain_scaled
+    xtest_scaled = pd.DataFrame(MinMaxScaler().fit_transform(test), columns=test.columns)
+    return xtrain_scaled, xtest_scaled
+
+def detect_encoding(file):
+    guess = chardet.detect(open(file, 'rb').read())['encoding']
+    return guess
+
+def normalize_abundances(df):
+    norm_df = pd.DataFrame()
+
+    #normalize abundances
+    for c in df.columns:
+        if not c.__contains__('genome_id'):
+            #total = condensed.loc[:, c].sum()
+            total = df.loc[:, c].sum()
+
+            if total == 0: #skip because there is no point in predicting these sites
+                continue
+
+            norm_df[c] = df[c] / total
+
+    norm_df['genome_id'] = df['genome_id']
+    return norm_df
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
     plt.gca().set_aspect('equal')
@@ -34,7 +56,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     ## Display the visualization of the Confusion Matrix.
     plt.tight_layout()
-    plt.savefig('test_images/'+filename)
+    plt.savefig('images/confusion-matrix/Rhizo/AE/'+filename)
     plt.close()
 
 class Autoencoder(ks.models.Model):
@@ -56,59 +78,75 @@ class Autoencoder(ks.models.Model):
             return decoded
 
 print('Reading data...')
-data = pd.read_csv('../../data/condensedKO_features.csv', index_col=0)
-labels = pd.read_csv('../../data/labels.csv', index_col=0)
+metadata = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_metadata.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_metadata.csv'))
+otu_features = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_otu.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_otu.csv'))
+otu_T = otu_features.T
 
-#get ocean regions
-int_labels = labels*1
-del int_labels['site']
-master_labels = int_labels.idxmax(axis=1)
+data = metadata.join(otu_T)
+#print(data)
 
-sites = data['site']
+ids = data.index.values.tolist()
+label_strings = data['drought_tolerance']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['site'])]
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])] #get rid of labels
 features = pd.get_dummies(features)
-labels = labels.loc[:, ~labels.columns.isin(['site'])]
+#print(features)
+
+labels = pd.get_dummies(label_strings)['HI30']
+#print(labels)
 
 print('Cleaning features...')
-remove = [col for col in features.columns if features[col].isna().sum() != 0 or col.__contains__('Ocean.region')]
+remove = [col for col in features.columns if features[col].isna().sum() != 0]
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
-
-sm = SMOTE(k_neighbors=1, random_state=55)
+#print(features)
 
 print()
 
-#for label in labels.columns: #it doesnt seem to work in a for loop - strange
-label = 'SP'
+label = 'drought_tolerance'
 
 print('Scaling data...')
-X_res, y_res = sm.fit_resample(features, labels[label])
-X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.3, random_state=5)
-X_train_scaled = scale(X_train)
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
+X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
 print('Building autoencoder model...')
-autoencoder = Autoencoder(10)
+autoencoder = Autoencoder(100)
 autoencoder.compile(loss='mae', optimizer='adam')
-print(autoencoder)
 
 try:
     encoder_layer = autoencoder.get_layer('sequential')
 except:
     exit
 
-reduced_df = pd.DataFrame(encoder_layer.predict(X_train_scaled))
-reduced_df.add_prefix('feature_')
+AE_train = pd.DataFrame(encoder_layer.predict(X_train_scaled))
+AE_train.add_prefix('feature_')
+AE_test = pd.DataFrame(encoder_layer.predict(X_test_scaled))
+AE_test.add_prefix('feature_')
 #print(reduced_df)
 
 print('Predicting with SVM...')
 
+
+params = {
+    'C': [0.1, 1, 10, 100, 1000],
+    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+    'kernel': ['rbf', 'linear']
+}
+
+clf = GridSearchCV(
+    estimator=svm.SVC(),
+    param_grid=params,
+    cv=5,
+    n_jobs=5,
+    verbose=3
+)
+
 print('Building model for label:', label)
-clf = svm.SVC(kernel='linear')
-clf.fit(X_train, y_train)
+#print(AE_train.shape())
+clf.fit(AE_train, y_train)
 
 print('Predicting on test data for label:', label)
-y_pred = clf.predict(X_test)
+y_pred = clf.predict(AE_test)
 
 print('Calculating metrics for:', label)
 print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
@@ -116,6 +154,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-test.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100.png')
 
 print()

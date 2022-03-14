@@ -34,7 +34,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
     ax.yaxis.set_ticklabels(['False','True'])
 
     ## Display the visualization of the Confusion Matrix.
-    plt.savefig('images/confusion-matrix/TARA/PCA/'+filename)
+    plt.savefig('images/confusion-matrix/Rhizo/PCA/'+filename)
     plt.close()
 
 def plot_pca(colors, pca, components, filename):

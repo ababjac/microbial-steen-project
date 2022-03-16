@@ -8,6 +8,7 @@ from sklearn.decomposition import PCA
 import plotly.express as px
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
+    plt.gca().set_aspect('equal')
     cf_matrix = metrics.confusion_matrix(y_actual, y_pred)
     if len(cf_matrix) != 2: #if it predicts perfectly then confusion matrix returns incorrect form
         val = cf_matrix[0][0]

@@ -27,9 +27,10 @@ def plot_confusion_matrix(cf_matrix, title, filename, color):
     plt.savefig(filename)
     plt.close()
 
-plot_confusion_matrix([[9,1],[10,0]], 'Drought Tolerance', 'images/confusion-matrix/Rhizo/PCA/drought_tolerance_CM.png', 'Greens')
-plot_confusion_matrix([[5,4],[5,5]], 'Drought Tolerance', 'images/confusion-matrix/Rhizo/Lasso/drought_tolerance_CM.png', 'Reds')
-plot_confusion_matrix([[5,4],[3,7]], 'Drought Tolerance', 'images/confusion-matrix/Rhizo/AE/drought_tolerance_CM-AE100.png', 'Blues')
+#plot_confusion_matrix([[9,1],[10,0]], 'Drought Tolerance', 'images/confusion-matrix/Rhizo/PCA/drought_tolerance_CM.png', 'Greens')
+#plot_confusion_matrix([[5,4],[5,5]], 'Drought Tolerance', 'images/confusion-matrix/Rhizo/Lasso/drought_tolerance_CM.png', 'Reds')
+#plot_confusion_matrix([[5,4],[3,7]], 'Drought Tolerance', 'images/confusion-matrix/Rhizo/AE/drought_tolerance_CM-AE100.png', 'Blues')
 
-plot_confusion_matrix([[13000,0],[0,3000]], 'cultured', 'images/confusion-matrix/GEM/Lasso/cultured_CM.png', 'Reds')
-plot_confusion_matrix([[13000,0],[3000,0]], 'cultured', 'images/confusion-matrix/GEM/Lasso/cultured_CM-nometa.png', 'Reds')
+#plot_confusion_matrix([[13000,0],[0,3000]], 'cultured', 'images/confusion-matrix/GEM/Lasso/cultured_CM.png', 'Reds')
+#plot_confusion_matrix([[13000,0],[3000,0]], 'cultured', 'images/confusion-matrix/GEM/Lasso/cultured_CM-nometa.png', 'Reds')
+plot_confusion_matrix([[31,1],[3,3]], 'NP', 'images/confusion-matrix/TARA/Lasso/NP_CM.png', 'Reds')

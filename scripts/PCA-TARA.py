@@ -10,6 +10,7 @@ import plotly.express as px
 from imblearn.over_sampling import SMOTE
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
+    plt.gca().set_aspect('equal')
     cf_matrix = metrics.confusion_matrix(y_actual, y_pred)
     if len(cf_matrix) != 2: #if it predicts perfectly then confusion matrix returns incorrect form
         val = cf_matrix[0][0]
@@ -64,7 +65,9 @@ sites = data['site']
 #print(sites)
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['site'])]
+features = data.loc[:, ~data.columns.isin(['site', 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
+'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
+'Alkalinity.total','Ammonium.5m','Depth.Mixed.Layer','Lyapunov','NO2','Depth.Min.O2','NO2NO3','Nitracline','Brunt.Väisälä','Iron.5m','Depth.Max.O2','Okubo.Weiss','Residence.time'])]
 features = pd.get_dummies(features)
 #print(features)
 labels = labels.loc[:, ~labels.columns.isin(['site'])]
@@ -123,6 +126,6 @@ for label in labels.columns:
     print("Recall:",metrics.recall_score(y_test, y_pred))
 
     print('Plotting:', label)
-    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
 
     print()

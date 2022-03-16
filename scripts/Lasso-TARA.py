@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.pipeline import Pipeline
 import chardet
+from imblearn.over_sampling import SMOTE
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
     plt.gca().set_aspect('equal')
@@ -19,7 +20,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     #print(cf_matrix)
 
-    ax = sns.heatmap(cf_matrix, annot=True, cmap='Blues')
+    ax = sns.heatmap(cf_matrix, annot=True, cmap='Reds')
 
     ax.set_title(title+'\n\n');
     ax.set_xlabel('\nPredicted Values')
@@ -67,6 +68,8 @@ remove = [col for col in features.columns if features[col].isna().sum() != 0 or 
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 #print(features)
 
+sm = SMOTE(k_neighbors=1, random_state=55)
+
 params = {
     'C': [0.1, 1, 10, 100, 1000],
     'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
@@ -81,10 +84,13 @@ clf = GridSearchCV(
     verbose=3
 )
 
-for label in labels.columns:
+labels_list = ['RS','SO','NAT','IO','SP','AO','SAT','MS', 'NP']
+
+for label in labels_list:
 
     print('Scaling data...')
-    X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
+    X_res, y_res = sm.fit_resample(features, labels[label])
+    X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.3, random_state=5)
 
     print('Doing feature selection with Lasso...')
     pipeline = Pipeline([('scaler',StandardScaler()), ('model',Lasso())])
@@ -95,10 +101,11 @@ for label in labels.columns:
     search.fit(X_train, y_train)
     coefficients = search.best_estimator_.named_steps['model'].coef_
     importance = np.abs(coefficients)
-    remove = np.array(features.columns)[importance > 0]
+    remove = np.array(features.columns)[importance == 0] #remove anything not important
 
-    X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
-    X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
+    if len(remove) < len(features.columns): #if everything is not important use the entire dataset
+        X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
+        X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
 
     print('Predicting with SVM...')
 

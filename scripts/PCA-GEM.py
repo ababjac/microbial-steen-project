@@ -17,7 +17,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     #print(cf_matrix)
 
-    ax = sns.heatmap(cf_matrix, annot=True, cmap='Blues')
+    ax = sns.heatmap(cf_matrix, annot=True, cmap='Greens')
 
     ax.set_title(title+'\n\n');
     ax.set_xlabel('\nPredicted Values')

@@ -19,7 +19,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     #print(cf_matrix)
 
-    ax = sns.heatmap(cf_matrix, annot=True, cmap='Blues')
+    ax = sns.heatmap(cf_matrix, annot=True, cmap='Reds')
 
     ax.set_title(title+'\n\n');
     ax.set_xlabel('\nPredicted Values')
@@ -74,7 +74,7 @@ ids = data['genome_id']
 label_strings = data['cultured.status']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'completeness'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
@@ -103,7 +103,7 @@ search = GridSearchCV(pipeline,
 search.fit(X_train, y_train)
 coefficients = search.best_estimator_.named_steps['model'].coef_
 importance = np.abs(coefficients)
-remove = np.array(features.columns)[importance > 0]
+remove = np.array(features.columns)[importance == 0]
 
 X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
 X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
@@ -138,6 +138,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
 
 print()

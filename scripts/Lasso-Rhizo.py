@@ -19,7 +19,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     #print(cf_matrix)
 
-    ax = sns.heatmap(cf_matrix, annot=True, cmap='Blues')
+    ax = sns.heatmap(cf_matrix, annot=True, cmap='Reds')
 
     ax.set_title(title+'\n\n');
     ax.set_xlabel('\nPredicted Values')
@@ -84,10 +84,12 @@ search = GridSearchCV(pipeline,
 search.fit(X_train, y_train)
 coefficients = search.best_estimator_.named_steps['model'].coef_
 importance = np.abs(coefficients)
-remove = np.array(features.columns)[importance > 0]
+#print(list(importance))
+remove = np.array(features.columns)[importance == 0]
 
-X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
-X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
+if len(remove) < len(features.columns): #if everything is not important then no feature selection can occur
+    X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
+    X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
 
 print('Predicting with SVM...')
 

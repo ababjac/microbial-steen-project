@@ -91,7 +91,7 @@ ids = data['genome_id']
 label_strings = data['cultured.status']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'completeness'])] #remove metadata
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])] #remove metadata
 features = pd.get_dummies(features)
 #print(features.columns)
 

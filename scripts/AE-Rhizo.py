@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras as ks
 import chardet
+from sklearn.metrics import roc_curve, auc
 
 def scale(train, test):
     xtrain_scaled = pd.DataFrame(MinMaxScaler().fit_transform(train), columns=train.columns)
@@ -59,6 +60,16 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
     plt.savefig('images/confusion-matrix/Rhizo/AE/'+filename)
     plt.close()
 
+def plot_auc(y_pred, y_actual, title, filename):
+    fpr, tpr, thresholds = roc_curve(y_actual, y_pred)
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+
+    plt.title(title)
+    plt.legend()
+    plt.savefig('images/AUC/Rhizo/AE/'+filename)
+    plt.close()
+
 class Autoencoder(ks.models.Model):
     def __init__(self, latent_dim):
         super(Autoencoder, self).__init__()
@@ -89,7 +100,7 @@ ids = data.index.values.tolist()
 label_strings = data['drought_tolerance']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])]#, 'irrigation', 'habitat'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
@@ -130,7 +141,8 @@ print('Predicting with SVM...')
 params = {
     'C': [0.1, 1, 10, 100, 1000],
     'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    'kernel': ['rbf', 'linear']
+    'kernel': ['rbf', 'linear'],
+    'probability': [True]
 }
 
 clf = GridSearchCV(
@@ -146,14 +158,19 @@ print('Building model for label:', label)
 clf.fit(AE_train, y_train)
 
 print('Predicting on test data for label:', label)
-y_pred = clf.predict(AE_test)
+# y_pred = clf.predict(AE_test)
+y_pred = clf.predict_proba(AE_test) #get probabilities for AUC
+preds = y_pred[:,1]
 
-print('Calculating metrics for:', label)
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-print("Precision:",metrics.precision_score(y_test, y_pred))
-print("Recall:",metrics.recall_score(y_test, y_pred))
+print('Calculating AUC score...')
+plot_auc(preds, y_test, 'AUC for '+label, label+'_AUC.png')
 
-print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100-nometa.png')
+# print('Calculating metrics for:', label)
+# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+# print("Precision:",metrics.precision_score(y_test, y_pred))
+# print("Recall:",metrics.recall_score(y_test, y_pred))
+#
+# print('Plotting:', label)
+# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-AE100-nometa.png')
 
 print()

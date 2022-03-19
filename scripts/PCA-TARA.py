@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
 import plotly.express as px
 from imblearn.over_sampling import SMOTE
+from sklearn.metrics import roc_curve, auc
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
     plt.gca().set_aspect('equal')
@@ -31,6 +32,16 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     ## Display the visualization of the Confusion Matrix.
     plt.savefig('images/confusion-matrix/TARA/PCA/'+filename)
+    plt.close()
+
+def plot_auc(y_pred, y_actual, title, filename):
+    fpr, tpr, thresholds = roc_curve(y_actual, y_pred)
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+
+    plt.title(title)
+    plt.legend()
+    plt.savefig('images/AUC/TARA/PCA/'+filename)
     plt.close()
 
 def plot_pca(colors, pca, components, filename):
@@ -65,9 +76,9 @@ sites = data['site']
 #print(sites)
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['site', 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
-'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
-'Alkalinity.total','Ammonium.5m','Depth.Mixed.Layer','Lyapunov','NO2','Depth.Min.O2','NO2NO3','Nitracline','Brunt.Väisälä','Iron.5m','Depth.Max.O2','Okubo.Weiss','Residence.time'])]
+features = data.loc[:, ~data.columns.isin(['site'])]#, 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
+#'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
+#'Alkalinity.total','Ammonium.5m','Depth.Mixed.Layer','Lyapunov','NO2','Depth.Min.O2','NO2NO3','Nitracline','Brunt.Väisälä','Iron.5m','Depth.Max.O2','Okubo.Weiss','Residence.time'])]
 features = pd.get_dummies(features)
 #print(features)
 labels = labels.loc[:, ~labels.columns.isin(['site'])]
@@ -96,7 +107,8 @@ sm = SMOTE(k_neighbors=1, random_state=55)
 params = {
     'C': [0.1, 1, 10, 100, 1000],
     'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    'kernel': ['rbf', 'linear']
+    'kernel': ['rbf', 'linear'],
+    'probability': [True]
 }
 
 clf = GridSearchCV(
@@ -108,8 +120,10 @@ clf = GridSearchCV(
 )
 #print(clf.best_params_)
 
+labels_list = ['MS']
+
 print()
-for label in labels.columns:
+for label in labels_list:
     X_res, y_res = sm.fit_resample(pca_features_df, labels[label])
     X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.3, random_state=5)#, shuffle=True, stratify=labels[label]) # 70% training and 30% test
     #X_test_res, y_test_res = sm.fit_resample(X_test, y_test)
@@ -118,14 +132,19 @@ for label in labels.columns:
     clf.fit(X_train, y_train)
 
     print('Predicting on test data for label:', label)
-    y_pred = clf.predict(X_test)
+    #y_pred = clf.predict(X_test)
+    # y_pred = clf.predict_proba(X_test) #get probabilities for AUC
+    # preds = y_pred[:,1]
+    #
+    # print('Calculating AUC score...')
+    # plot_auc(preds, y_test, 'AUC for '+label, label+'_AUC.png')
 
-    print('Calculating metrics for:', label)
-    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    print("Precision:",metrics.precision_score(y_test, y_pred))
-    print("Recall:",metrics.recall_score(y_test, y_pred))
-
-    print('Plotting:', label)
-    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+    # print('Calculating metrics for:', label)
+    # print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    # print("Precision:",metrics.precision_score(y_test, y_pred))
+    # print("Recall:",metrics.recall_score(y_test, y_pred))
+    #
+    # print('Plotting:', label)
+    # plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
 
     print()

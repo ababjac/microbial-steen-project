@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.decomposition import PCA
 import plotly.express as px
 import chardet
+from sklearn.metrics import roc_curve, auc
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
     cf_matrix = metrics.confusion_matrix(y_actual, y_pred)
@@ -29,6 +30,16 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     ## Display the visualization of the Confusion Matrix.
     plt.savefig('images/confusion-matrix/GEM/PCA/'+filename)
+    plt.close()
+
+def plot_auc(y_pred, y_actual, title, filename):
+    fpr, tpr, thresholds = roc_curve(y_actual, y_pred)
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+
+    plt.title(title)
+    plt.legend()
+    plt.savefig('images/AUC/GEM/PCA/'+filename)
     plt.close()
 
 def plot_pca(colors, pca, components, filename, num):
@@ -109,7 +120,8 @@ label = 'cultured'
 params = {
     'C': [0.1, 1, 10, 100, 1000],
     'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    'kernel': ['rbf', 'linear']
+    'kernel': ['rbf', 'linear'],
+    'probability': [True]
 }
 
 clf = GridSearchCV(
@@ -127,6 +139,11 @@ clf.fit(X_train, y_train)
 
 print('Predicting on test data for label:', label)
 y_pred = clf.predict(X_test)
+y_prob = clf.predict_proba(X_test) #get probabilities for AUC
+preds = y_prob[:,1]
+
+print('Calculating AUC score...')
+plot_auc(preds, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
 
 print('Calculating metrics for:', label)
 print("Accuracy:",metrics.accuracy_score(y_test, y_pred))

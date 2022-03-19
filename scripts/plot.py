@@ -33,4 +33,4 @@ def plot_confusion_matrix(cf_matrix, title, filename, color):
 
 #plot_confusion_matrix([[13000,0],[0,3000]], 'cultured', 'images/confusion-matrix/GEM/Lasso/cultured_CM.png', 'Reds')
 #plot_confusion_matrix([[13000,0],[3000,0]], 'cultured', 'images/confusion-matrix/GEM/Lasso/cultured_CM-nometa.png', 'Reds')
-plot_confusion_matrix([[31,1],[3,3]], 'NP', 'images/confusion-matrix/TARA/Lasso/NP_CM.png', 'Reds')
+#plot_confusion_matrix([[31,1],[3,3]], 'NP', 'images/confusion-matrix/TARA/Lasso/NP_CM.png', 'Reds')

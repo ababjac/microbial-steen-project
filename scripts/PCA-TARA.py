@@ -94,7 +94,7 @@ remove = [col for col in features.columns if features[col].isna().sum() != 0 or 
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 
 #pca_model = PCA(n_components=0.99) #account for 99% of variability
-pca_model = PCA(n_components=9) #make 9 components for 9 ocean regions
+pca_model = PCA(n_components=0.9) #make 9 components for 9 ocean regions
 pca_features = pca_model.fit_transform(features)
 
 #plot_pca(master_labels, pca_model, pca_features, 'images/PCA/nc_9.png')

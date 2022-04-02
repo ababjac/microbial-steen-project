@@ -108,7 +108,7 @@ ids = data.index.values.tolist()
 label_strings = data['drought_tolerance']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])]#, 'irrigation', 'habitat'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
@@ -151,7 +151,7 @@ params = grid.best_params_
 autoencoder = create_AE(**params)
 
 try:
-    encoder_layer = autoencoder.get_layer('sequential')
+    encoder_layer = autoencoder.encoder
 except:
     exit
 
@@ -190,7 +190,7 @@ y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
 probs = y_prob[:,1]
 
 print('Calculating AUC score...')
-plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
 
 print('Calculating metrics for:', label)
 print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
@@ -198,6 +198,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
 
 print()

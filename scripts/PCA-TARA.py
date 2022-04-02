@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn import svm, metrics
+from sklearn import svm, metrics, preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
@@ -76,9 +76,9 @@ sites = data['site']
 #print(sites)
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['site'])]#, 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
-#'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
-#'Alkalinity.total','Ammonium.5m','Depth.Mixed.Layer','Lyapunov','NO2','Depth.Min.O2','NO2NO3','Nitracline','Brunt.Väisälä','Iron.5m','Depth.Max.O2','Okubo.Weiss','Residence.time'])]
+features = data.loc[:, ~data.columns.isin(['site', 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
+'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
+'Alkalinity.total','Ammonium.5m','Depth.Mixed.Layer','Lyapunov','NO2','Depth.Min.O2','NO2NO3','Nitracline','Brunt.Väisälä','Iron.5m','Depth.Max.O2','Okubo.Weiss','Residence.time'])]
 features = pd.get_dummies(features)
 #print(features)
 labels = labels.loc[:, ~labels.columns.isin(['site'])]
@@ -120,31 +120,31 @@ clf = GridSearchCV(
 )
 #print(clf.best_params_)
 
-labels_list = ['MS']
-
 print()
-for label in labels_list:
+for label in labels.columns:
     X_res, y_res = sm.fit_resample(pca_features_df, labels[label])
     X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.3, random_state=5)#, shuffle=True, stratify=labels[label]) # 70% training and 30% test
+    X_train = preprocessing.scale(X_train)
+    X_test = preprocessing.scale(X_test)
     #X_test_res, y_test_res = sm.fit_resample(X_test, y_test)
 
     print('Building model for label:', label)
     clf.fit(X_train, y_train)
 
     print('Predicting on test data for label:', label)
-    #y_pred = clf.predict(X_test)
-    # y_pred = clf.predict_proba(X_test) #get probabilities for AUC
-    # preds = y_pred[:,1]
-    #
-    # print('Calculating AUC score...')
-    # plot_auc(preds, y_test, 'AUC for '+label, label+'_AUC.png')
+    y_pred = clf.predict(X_test)
+    y_prob = clf.predict_proba(X_test) #get probabilities for AUC
+    probs = y_prob[:,1]
 
-    # print('Calculating metrics for:', label)
-    # print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    # print("Precision:",metrics.precision_score(y_test, y_pred))
-    # print("Recall:",metrics.recall_score(y_test, y_pred))
-    #
-    # print('Plotting:', label)
-    # plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+    print('Calculating AUC score...')
+    plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+
+    print('Calculating metrics for:', label)
+    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    print("Precision:",metrics.precision_score(y_test, y_pred))
+    print("Recall:",metrics.recall_score(y_test, y_pred))
+
+    print('Plotting:', label)
+    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
 
     print()

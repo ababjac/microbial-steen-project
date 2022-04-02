@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn import svm, metrics
+from sklearn import svm, metrics, preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
@@ -80,7 +80,7 @@ ids = data.index.values.tolist()
 label_strings = data['drought_tolerance']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])]#, 'irrigation', 'habitat'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
@@ -126,24 +126,26 @@ print('Running SVM...')
 
 X_res, y_res = sm.fit_resample(pca_features_df, labels)
 X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.3, random_state=5)#, shuffle=True, stratify=labels[label]) # 70% training and 30% test
+X_train = preprocessing.scale(X_train)
+X_test = preprocessing.scale(X_test)
 
 print('Building model for label:', label)
 clf.fit(X_train, y_train)
 
 print('Predicting on test data for label:', label)
-#y_pred = clf.predict(X_test)
-y_pred = clf.predict_proba(X_test) #get probabilities for AUC
-preds = y_pred[:,1]
+y_pred = clf.predict(X_test)
+y_prob = clf.predict_proba(X_test) #get probabilities for AUC
+probs = y_prob[:,1]
 
 print('Calculating AUC score...')
-plot_auc(preds, y_test, 'AUC for '+label, label+'_AUC.png')
+plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
 
-# print('Calculating metrics for:', label)
-# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-# print("Precision:",metrics.precision_score(y_test, y_pred))
-# print("Recall:",metrics.recall_score(y_test, y_pred))
-#
-# print('Plotting:', label)
-# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+print('Calculating metrics for:', label)
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+print("Precision:",metrics.precision_score(y_test, y_pred))
+print("Recall:",metrics.recall_score(y_test, y_pred))
+
+print('Plotting:', label)
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
 
 print()

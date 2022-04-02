@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import Lasso
 import seaborn as sns
-from sklearn import svm, metrics
+from sklearn import svm, metrics, preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.pipeline import Pipeline
@@ -99,18 +99,17 @@ clf = GridSearchCV(
     verbose=3
 )
 
-labels_list = ['RS','SO','NAT','IO','SP','AO','SAT','MS', 'NP']
-
-for label in labels_list:
+for label in labels.columns:
 
     print('Scaling data...')
     X_res, y_res = sm.fit_resample(features, labels[label])
     X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.3, random_state=5)
 
+
     print('Doing feature selection with Lasso...')
     pipeline = Pipeline([('scaler',StandardScaler()), ('model',Lasso())])
     search = GridSearchCV(pipeline,
-                        {'model__alpha':np.arange(0.1,10,0.1)},
+                        {'model__alpha':np.arange(0.1, 10, 0.1)},
                         cv = 5, scoring="neg_mean_squared_error",verbose=3
                         )
     search.fit(X_train, y_train)
@@ -122,25 +121,28 @@ for label in labels_list:
         X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
         X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
 
+    X_train = preprocessing.scale(X_train)
+    X_test = preprocessing.scale(X_test)
+
     print('Predicting with SVM...')
 
     print('Building model for label:', label)
     clf.fit(X_train, y_train)
 
     print('Predicting on test data for label:', label)
-    #y_pred = clf.predict(X_test)
-    y_pred = clf.predict_proba(X_test) #get probabilities for AUC
-    preds = y_pred[:,1]
+    y_pred = clf.predict(X_test)
+    y_prob = clf.predict_proba(X_test) #get probabilities for AUC
+    probs = y_prob[:,1]
 
     print('Calculating AUC score...')
-    plot_auc(preds, y_test, 'AUC for '+label, label+'_AUC.png')
+    plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
 
-    # print('Calculating metrics for:', label)
-    # print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    # print("Precision:",metrics.precision_score(y_test, y_pred))
-    # print("Recall:",metrics.recall_score(y_test, y_pred))
-    #
-    # print('Plotting:', label)
-    # plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+    print('Calculating metrics for:', label)
+    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    print("Precision:",metrics.precision_score(y_test, y_pred))
+    print("Recall:",metrics.recall_score(y_test, y_pred))
+
+    print('Plotting:', label)
+    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
 
     print()

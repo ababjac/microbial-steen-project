@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn import svm, metrics
+from sklearn import svm, metrics, preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.decomposition import PCA
 import plotly.express as px
@@ -95,7 +95,7 @@ ids = data['genome_id']
 label_strings = data['cultured.status']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])]
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'completeness'])]
 features = pd.get_dummies(features)
 
 labels = pd.get_dummies(label_strings)['cultured']
@@ -133,6 +133,9 @@ clf = GridSearchCV(
 )
 
 X_train, X_test, y_train, y_test = train_test_split(pca_features, labels, test_size=0.3, random_state=5, shuffle=True, stratify=labels) # 70% training and 30% test
+X_train = preprocessing.scale(X_train)
+X_test = preprocessing.scale(X_test)
+
 
 print('Building model for label:', label)
 clf.fit(X_train, y_train)
@@ -143,7 +146,7 @@ y_prob = clf.predict_proba(X_test) #get probabilities for AUC
 preds = y_prob[:,1]
 
 print('Calculating AUC score...')
-plot_auc(preds, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+plot_auc(preds, y_prob, 'AUC for '+label, label+'_AUC-nometa.png')
 
 print('Calculating metrics for:', label)
 print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
@@ -151,6 +154,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-PCA.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
 
 print()

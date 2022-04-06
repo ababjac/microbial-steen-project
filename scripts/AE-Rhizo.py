@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow import keras as ks
 import chardet
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve, auc, make_scorer, accuracy_score
 from keras.wrappers.scikit_learn import KerasClassifier
 
 def scale(train, test):
@@ -86,7 +86,7 @@ class Autoencoder(ks.models.Model):
         #ks.layers.Reshape((actual_dim, actual_dim))
         ])
 
-        self.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
+        self.compile(loss=loss, optimizer=optimizer, metrics=[ks.metrics.BinaryAccuracy(name='accuracy')])
 
     def call(self, x):
         encoded = self.encoder(x)
@@ -146,8 +146,9 @@ grid = GridSearchCV(
     verbose=3
 )
 
-result = grid.fit(X_train_scaled, X_train_scaled)
+result = grid.fit(X_train_scaled, X_train_scaled, validation_data=(X_test_scaled, X_test_scaled))
 params = grid.best_params_
+print(params)
 autoencoder = create_AE(**params)
 
 try:
@@ -160,44 +161,46 @@ AE_train.add_prefix('feature_')
 AE_test = pd.DataFrame(encoder_layer.predict(X_test_scaled))
 AE_test.add_prefix('feature_')
 
-AE_train = preprocessing.scale(AE_train)
-AE_test = preprocessing.scale(AE_test)
+print(AE_train.shape)
+
+#AE_train = preprocessing.scale(AE_train)
+#AE_test = preprocessing.scale(AE_test)
 
 print('Predicting with SVM...')
 
 
-params = {
-    'C': [0.1, 1, 10, 100, 1000],
-    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    'kernel': ['rbf', 'linear'],
-    'probability': [True]
-}
-
-clf = GridSearchCV(
-    estimator=svm.SVC(),
-    param_grid=params,
-    cv=5,
-    n_jobs=5,
-    verbose=3
-)
-
-print('Building model for label:', label)
-clf.fit(AE_train, y_train)
-
-print('Predicting on test data for label:', label)
-y_pred = clf.predict(AE_test)
-y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
-probs = y_prob[:,1]
-
-print('Calculating AUC score...')
-plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
-
-print('Calculating metrics for:', label)
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-print("Precision:",metrics.precision_score(y_test, y_pred))
-print("Recall:",metrics.recall_score(y_test, y_pred))
-
-print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
-
-print()
+# params = {
+#     'C': [0.1, 1, 10, 100, 1000],
+#     'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+#     'kernel': ['rbf', 'linear'],
+#     'probability': [True]
+# }
+#
+# clf = GridSearchCV(
+#     estimator=svm.SVC(),
+#     param_grid=params,
+#     cv=5,
+#     n_jobs=5,
+#     verbose=3
+# )
+#
+# print('Building model for label:', label)
+# clf.fit(AE_train, y_train)
+#
+# print('Predicting on test data for label:', label)
+# y_pred = clf.predict(AE_test)
+# y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
+# probs = y_prob[:,1]
+#
+# print('Calculating AUC score...')
+# plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
+#
+# print('Calculating metrics for:', label)
+# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+# print("Precision:",metrics.precision_score(y_test, y_pred))
+# print("Recall:",metrics.recall_score(y_test, y_pred))
+#
+# print('Plotting:', label)
+# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+#
+# print()

@@ -1,23 +1,118 @@
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import svm, metrics, preprocessing
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow import keras as ks
+import chardet
+from sklearn.metrics import roc_curve, auc
+from keras.wrappers.scikit_learn import KerasClassifier
 
+def scale(train, test):
+    xtrain_scaled = pd.DataFrame(MinMaxScaler().fit_transform(train), columns=train.columns)
+    xtest_scaled = pd.DataFrame(MinMaxScaler().fit_transform(test), columns=test.columns)
+    return xtrain_scaled, xtest_scaled
 
-df = pd.read_csv('metatranscriptomes/salazar_profiles/OM_RGC_genus_KO_profiles_metat_rarefy.tsv')
-meta = pd.read_csv('metatranscriptomes/salazar_profiles/salazar_metadata.csv', encoding='ISO-8859-1')
-convert = pd.read_csv('metatranscriptomes/salazar_profiles/metat_to_metag.csv')
-convert_dict = dict(zip(convert['metat'].values.tolist(), convert['site'].values.tolist())) #df_locations -> meta_locations
+def detect_encoding(file):
+    guess = chardet.detect(open(file, 'rb').read())['encoding']
+    return guess
 
+class Autoencoder(ks.models.Model):
+    def __init__(self, actual_dim, latent_dim, activation, loss, optimizer):
+        super(Autoencoder, self).__init__()
+        self.latent_dim = latent_dim
 
-df_locations = [c for c in df.columns.tolist() if c.__contains__('TARA')]
-meta_locations = meta['site'].values.tolist()
+        self.encoder = ks.Sequential([
+        ks.layers.Flatten(),
+        ks.layers.Dense(latent_dim, activation=activation),
+        ])
 
-#print(len(df_locations), len(meta_locations), len(convert))
-count = 0
-for loc in df_locations:
-    if loc in convert_dict.keys():
-        if convert_dict[loc] in meta_locations:
-            count += 1
-    else:
-        if loc in meta_locations:
-            count += 1
+        self.decoder = ks.Sequential([
+        ks.layers.Dense(actual_dim, activation=activation),
+        #ks.layers.Reshape((actual_dim, actual_dim))
+        ])
 
-print(count)
+        self.compile(loss=loss, optimizer=optimizer, metrics=['binary_accuracy'])
+
+    def call(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return decoded
+
+def create_AE(actual_dim=1, latent_dim=100, activation='relu', loss='MAE', optimizer='Adam'):
+    return Autoencoder(actual_dim, latent_dim, activation, loss, optimizer)
+
+print('Reading data...')
+metadata = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_metadata.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_metadata.csv'))
+otu_features = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_otu.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_otu.csv'))
+otu_T = otu_features.T
+
+data = metadata.join(otu_T)
+#print(data)
+
+ids = data.index.values.tolist()
+label_strings = data['drought_tolerance']
+
+print('Splitting data...')
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])]#, 'irrigation', 'habitat'])] #get rid of labels
+features = pd.get_dummies(features)
+#print(features)
+
+labels = pd.get_dummies(label_strings)['HI30']
+#print(labels)
+
+print('Cleaning features...')
+remove = [col for col in features.columns if features[col].isna().sum() != 0]
+features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
+#print(features)
+
+print()
+
+label = 'drought_tolerance'
+
+print('Scaling data...')
+X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
+X_train_scaled, X_test_scaled = scale(X_train, X_test)
+
+autoencoder = create_AE(actual_dim=len(features.columns))
+# x_decoded = autoencoder.predict(X_train_scaled.values)
+# print(X_train_scaled.values)
+# print(x_decoded)
+# acc = np.mean(np.equal(X_train_scaled.values, np.round(x_decoded)))
+# print(acc)
+autoencoder.fit(X_train_scaled.values, X_train_scaled.values, epochs=10, validation_data=(X_test_scaled.values, X_test_scaled.values))
+
+# print('Building autoencoder model...')
+# params_AE = {
+#     'actual_dim' : [len(features.columns)],
+#     'latent_dim' : [10, 50, 100, 200],
+#     'activation' : ['relu', 'sigmoid', 'tanh'],
+#     'loss' : ['MAE', 'binary_crossentropy'],
+#     'optimizer' : ['SGD', 'Adam']
+# }
+#
+# model = KerasClassifier(build_fn=create_AE, epochs=10, verbose=0)
+# grid = GridSearchCV(
+#     estimator=model,
+#     param_grid=params_AE,
+#     cv=5,
+# #    n_jobs=3,
+#     verbose=3
+# )
+#
+# result = grid.fit(X_train_scaled, X_train_scaled)
+# params = grid.best_params_
+# print(params)
+# autoencoder = create_AE(**params)
+#
+# try:
+#     encoder_layer = autoencoder.encoder
+# except:
+#     exit
+#
+# AE_train = pd.DataFrame(encoder_layer.predict(X_train_scaled))
+# AE_train.add_prefix('feature_')
+# AE_test = pd.DataFrame(encoder_layer.predict(X_test_scaled))
+# AE_test.add_prefix('feature_')

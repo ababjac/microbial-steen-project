@@ -65,7 +65,7 @@ class Autoencoder(ks.models.Model):
         #ks.layers.Reshape((actual_dim, actual_dim))
         ])
 
-        self.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
+        self.compile(loss=loss, optimizer=optimizer, metrics=[ks.metrics.BinaryAccuracy(name='accuracy')])
 
     def call(self, x):
         encoded = self.encoder(x)
@@ -145,8 +145,9 @@ for label in labels.columns:
     X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
     print('Building autoencoder model...')
-    result = grid.fit(X_train_scaled, X_train_scaled)
+    result = grid.fit(X_train_scaled, X_train_scaled, validation_data=(X_test_scaled, X_test_scaled))
     params = grid.best_params_
+    print(params)
 
     autoencoder = create_AE(**params) #create autoencoder with best parameters from grid search
 
@@ -160,28 +161,30 @@ for label in labels.columns:
     AE_test = pd.DataFrame(encoder_layer.predict(X_test_scaled))
     AE_test.add_prefix('feature_')
 
-    AE_train = preprocessing.scale(AE_train)
-    AE_test = preprocessing.scale(AE_test)
+    print(AE_train.shape)
 
-    print('Predicting with SVM...')
+    #AE_train = preprocessing.scale(AE_train)
+    #AE_test = preprocessing.scale(AE_test)
 
-    print('Building model for label:', label)
-    clf.fit(AE_train, y_train)
-
-    print('Predicting on test data for label:', label)
-    y_pred = clf.predict(AE_test)
-    y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
-    probs = y_prob[:,1]
-
-    print('Calculating AUC score...')
-    plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
-
-    print('Calculating metrics for:', label)
-    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    print("Precision:",metrics.precision_score(y_test, y_pred))
-    print("Recall:",metrics.recall_score(y_test, y_pred))
-
-    print('Plotting:', label)
-    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
-
-    print()
+    # print('Predicting with SVM...')
+    #
+    # print('Building model for label:', label)
+    # clf.fit(AE_train, y_train)
+    #
+    # print('Predicting on test data for label:', label)
+    # y_pred = clf.predict(AE_test)
+    # y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
+    # probs = y_prob[:,1]
+    #
+    # print('Calculating AUC score...')
+    # plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+    #
+    # print('Calculating metrics for:', label)
+    # print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    # print("Precision:",metrics.precision_score(y_test, y_pred))
+    # print("Recall:",metrics.recall_score(y_test, y_pred))
+    #
+    # print('Plotting:', label)
+    # plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+    #
+    # print()

@@ -86,7 +86,7 @@ class Autoencoder(ks.models.Model):
         #ks.layers.Reshape((actual_dim, actual_dim))
         ])
 
-        self.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
+        self.compile(loss=loss, optimizer=optimizer, metrics=[ks.metrics.BinaryAccuracy(name='accuracy')])
 
     def call(self, x):
         encoded = self.encoder(x)
@@ -148,7 +148,7 @@ grid = GridSearchCV(
     verbose=3
 )
 
-result = grid.fit(X_train_scaled, X_train_scaled)
+result = grid.fit(X_train_scaled, X_train_scaled, validation_data=(X_test_scaled, X_test_scaled))
 params = grid.best_params_
 autoencoder = create_AE(**params)
 

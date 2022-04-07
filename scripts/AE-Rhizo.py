@@ -108,7 +108,7 @@ ids = data.index.values.tolist()
 label_strings = data['drought_tolerance']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])]#, 'irrigation', 'habitat'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
@@ -163,44 +163,44 @@ AE_test.add_prefix('feature_')
 
 print(AE_train.shape)
 
-#AE_train = preprocessing.scale(AE_train)
-#AE_test = preprocessing.scale(AE_test)
+AE_train = preprocessing.scale(AE_train)
+AE_test = preprocessing.scale(AE_test)
 
 print('Predicting with SVM...')
 
 
-# params = {
-#     'C': [0.1, 1, 10, 100, 1000],
-#     'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-#     'kernel': ['rbf', 'linear'],
-#     'probability': [True]
-# }
-#
-# clf = GridSearchCV(
-#     estimator=svm.SVC(),
-#     param_grid=params,
-#     cv=5,
-#     n_jobs=5,
-#     verbose=3
-# )
-#
-# print('Building model for label:', label)
-# clf.fit(AE_train, y_train)
-#
-# print('Predicting on test data for label:', label)
-# y_pred = clf.predict(AE_test)
-# y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
-# probs = y_prob[:,1]
-#
-# print('Calculating AUC score...')
-# plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
-#
-# print('Calculating metrics for:', label)
-# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-# print("Precision:",metrics.precision_score(y_test, y_pred))
-# print("Recall:",metrics.recall_score(y_test, y_pred))
-#
-# print('Plotting:', label)
-# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
-#
-# print()
+params = {
+    'C': [0.1, 1, 10, 100, 1000],
+    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+    'kernel': ['rbf', 'linear'],
+    'probability': [True]
+}
+
+clf = GridSearchCV(
+    estimator=svm.SVC(),
+    param_grid=params,
+    cv=5,
+    n_jobs=5,
+    verbose=3
+)
+
+print('Building model for label:', label)
+clf.fit(AE_train, y_train)
+
+print('Predicting on test data for label:', label)
+y_pred = clf.predict(AE_test)
+y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
+probs = y_prob[:,1]
+
+print('Calculating AUC score...')
+plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+
+print('Calculating metrics for:', label)
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+print("Precision:",metrics.precision_score(y_test, y_pred))
+print("Recall:",metrics.recall_score(y_test, y_pred))
+
+print('Plotting:', label)
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+
+print()

@@ -63,7 +63,7 @@ def plot_pca(colors, pca, components, filename):
     fig.write_image(filename)
 
 
-print('Reading data...')
+#print('Reading data...')
 data = pd.read_csv('files/data/condensedKO_features.csv', index_col=0)
 labels = pd.read_csv('files/data/labels.csv', index_col=0)
 
@@ -75,7 +75,7 @@ master_labels = int_labels.idxmax(axis=1)
 sites = data['site']
 #print(sites)
 
-print('Splitting data...')
+#print('Splitting data...')
 features = data.loc[:, ~data.columns.isin(['site', 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
 'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
 'Alkalinity.total','Ammonium.5m','Depth.Mixed.Layer','Lyapunov','NO2','Depth.Min.O2','NO2NO3','Nitracline','Brunt.Väisälä','Iron.5m','Depth.Max.O2','Okubo.Weiss','Residence.time'])]
@@ -84,7 +84,7 @@ features = pd.get_dummies(features)
 labels = labels.loc[:, ~labels.columns.isin(['site'])]
 #print(labels)
 
-print('Cleaning features...')
+#print('Cleaning features...')
 #print([features[col].isna().sum() for col in features.columns if features[col].isna().sum() != 0])
 remove = [col for col in features.columns if features[col].isna().sum() != 0 or col.__contains__('Ocean.region')]
 # fill.remove('PAR.PC')
@@ -116,7 +116,7 @@ clf = GridSearchCV(
     param_grid=params,
     cv=5,
     n_jobs=5,
-    verbose=3
+    verbose=0
 )
 #print(clf.best_params_)
 
@@ -128,23 +128,23 @@ for label in labels.columns:
     X_test = preprocessing.scale(X_test)
     #X_test_res, y_test_res = sm.fit_resample(X_test, y_test)
 
-    print('Building model for label:', label)
+#    print('Building model for label:', label)
     clf.fit(X_train, y_train)
 
-    print('Predicting on test data for label:', label)
+#    print('Predicting on test data for label:', label)
     y_pred = clf.predict(X_test)
     y_prob = clf.predict_proba(X_test) #get probabilities for AUC
-    probs = y_prob[:,1]
-
-    print('Calculating AUC score...')
-    plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
-
-    print('Calculating metrics for:', label)
-    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    print("Precision:",metrics.precision_score(y_test, y_pred))
-    print("Recall:",metrics.recall_score(y_test, y_pred))
-
-    print('Plotting:', label)
-    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
-
-    print()
+    # probs = y_prob[:,1]
+    #
+    # print('Calculating AUC score...')
+    # plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+    #
+    # print('Calculating metrics for:', label)
+    # print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    # print("Precision:",metrics.precision_score(y_test, y_pred))
+    # print("Recall:",metrics.recall_score(y_test, y_pred))
+    #
+    # print('Plotting:', label)
+    # plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+    #
+    # print()

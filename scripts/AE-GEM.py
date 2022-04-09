@@ -188,17 +188,17 @@ clf.fit(AE_train, y_train)
 print('Predicting on test data for label:', label)
 y_pred = clf.predict(AE_test)
 y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
-probs = y_prob[:,1]
-
-print('Calculating AUC score...')
-plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
-
-print('Calculating metrics for:', label)
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-print("Precision:",metrics.precision_score(y_test, y_pred))
-print("Recall:",metrics.recall_score(y_test, y_pred))
-
-print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
-
-print()
+# probs = y_prob[:,1]
+#
+# print('Calculating AUC score...')
+# plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
+#
+# print('Calculating metrics for:', label)
+# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+# print("Precision:",metrics.precision_score(y_test, y_pred))
+# print("Recall:",metrics.recall_score(y_test, y_pred))
+#
+# print('Plotting:', label)
+# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+#
+# print()

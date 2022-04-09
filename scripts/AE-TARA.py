@@ -76,7 +76,7 @@ def create_AE(actual_dim=1, latent_dim=100, activation='relu', loss='MAE', optim
     return Autoencoder(actual_dim, latent_dim, activation, loss, optimizer)
 
 
-print('Reading data...')
+#print('Reading data...')
 data = pd.read_csv('files/data/condensedKO_features.csv', index_col=0)
 labels = pd.read_csv('files/data/labels.csv', index_col=0)
 
@@ -87,15 +87,15 @@ master_labels = int_labels.idxmax(axis=1)
 
 sites = data['site']
 
-print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['site'])]
-#features = data.loc[:, ~data.columns.isin(['site', 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
-#'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
-#'Alkalinity.total','Ammonium.5m','Depth.Mixed.Layer','Lyapunov','NO2','Depth.Min.O2','NO2NO3','Nitracline','Brunt.Väisälä','Iron.5m','Depth.Max.O2','Okubo.Weiss','Residence.time'])]
+#print('Splitting data...')
+#features = data.loc[:, ~data.columns.isin(['site'])]
+features = data.loc[:, ~data.columns.isin(['site', 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
+'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
+'Alkalinity.total','Ammonium.5m','Depth.Mixed.Layer','Lyapunov','NO2','Depth.Min.O2','NO2NO3','Nitracline','Brunt.Väisälä','Iron.5m','Depth.Max.O2','Okubo.Weiss','Residence.time'])]
 features = pd.get_dummies(features)
 labels = labels.loc[:, ~labels.columns.isin(['site'])]
 
-print('Cleaning features...')
+#print('Cleaning features...')
 remove = [col for col in features.columns if features[col].isna().sum() != 0 or col.__contains__('Ocean.region')]
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 
@@ -115,7 +115,7 @@ clf = GridSearchCV(
     param_grid=params_SVM,
     cv=5,
     n_jobs=5,
-    verbose=3
+    verbose=0
 )
 
 params_AE = {
@@ -132,19 +132,19 @@ grid = GridSearchCV(
     param_grid=params_AE,
     cv=5,
 #    n_jobs=3,
-    verbose=3
+    verbose=0
 )
 
 #for label in labels.columns: #it doesnt seem to work in a for loop - strange
 print()
 for label in labels.columns:
 
-    print('Scaling data...')
+#    print('Scaling data...')
     X_res, y_res = sm.fit_resample(features, labels[label])
     X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.3, random_state=5)
     X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
-    print('Building autoencoder model...')
+#    print('Building autoencoder model...')
     result = grid.fit(X_train_scaled, X_train_scaled, validation_data=(X_test_scaled, X_test_scaled))
     params = grid.best_params_
     #print(params)
@@ -166,25 +166,25 @@ for label in labels.columns:
     AE_train = preprocessing.scale(AE_train)
     AE_test = preprocessing.scale(AE_test)
 
-    print('Predicting with SVM...')
+#    print('Predicting with SVM...')
 
-    print('Building model for label:', label)
+#    print('Building model for label:', label)
     clf.fit(AE_train, y_train)
 
-    print('Predicting on test data for label:', label)
+#    print('Predicting on test data for label:', label)
     y_pred = clf.predict(AE_test)
     y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
-    probs = y_prob[:,1]
-
-    print('Calculating AUC score...')
-    plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
-
-    print('Calculating metrics for:', label)
-    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    print("Precision:",metrics.precision_score(y_test, y_pred))
-    print("Recall:",metrics.recall_score(y_test, y_pred))
-
-    print('Plotting:', label)
-    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
-
-    print()
+    # probs = y_prob[:,1]
+    #
+    # print('Calculating AUC score...')
+    # plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
+    #
+    # print('Calculating metrics for:', label)
+    # print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    # print("Precision:",metrics.precision_score(y_test, y_pred))
+    # print("Recall:",metrics.recall_score(y_test, y_pred))
+    #
+    # print('Plotting:', label)
+    # plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+    #
+    # print()

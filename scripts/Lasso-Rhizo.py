@@ -54,7 +54,7 @@ def scale(train, test):
     xtest_scaled = pd.DataFrame(StandardScaler().fit_transform(test), columns=test.columns)
     return xtrain_scaled, xtest_scaled
 
-print('Reading data...')
+#print('Reading data...')
 metadata = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_metadata.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_metadata.csv'))
 otu_features = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_otu.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_otu.csv'))
 otu_T = otu_features.T
@@ -65,15 +65,15 @@ data = metadata.join(otu_T)
 ids = data.index.values.tolist()
 label_strings = data['drought_tolerance']
 
-print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])]#, 'irrigation', 'habitat'])] #get rid of labels
+#print('Splitting data...')
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
 labels = pd.get_dummies(label_strings)['HI30']
 #print(labels)
 
-print('Cleaning features...')
+#print('Cleaning features...')
 remove = [col for col in features.columns if features[col].isna().sum() != 0]
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 #print(features)
@@ -82,15 +82,15 @@ print()
 
 label = 'drought_tolerance'
 
-print('Scaling data...')
+#print('Scaling data...')
 X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
 X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
-print('Doing feature selection with Lasso...')
+#print('Doing feature selection with Lasso...')
 pipeline = Pipeline([('scaler',StandardScaler()), ('model',Lasso())])
 search = GridSearchCV(pipeline,
                       {'model__alpha':np.arange(0.1, 10, 0.1)},
-                      cv = 5, scoring="neg_mean_squared_error",verbose=3
+                      cv = 5, scoring="neg_mean_squared_error",verbose=0
                       )
 search.fit(X_train, y_train)
 coefficients = search.best_estimator_.named_steps['model'].coef_
@@ -105,7 +105,7 @@ if len(remove) < len(features.columns): #if everything is not important then no 
 X_train = preprocessing.scale(X_train)
 X_test = preprocessing.scale(X_test)
 
-print('Predicting with SVM...')
+#print('Predicting with SVM...')
 
 params = {
     'C': [0.1, 1, 10, 100, 1000],
@@ -119,26 +119,26 @@ clf = GridSearchCV(
     param_grid=params,
     cv=5,
     n_jobs=5,
-    verbose=3
+    verbose=0
 )
 
-print('Building model for label:', label)
+#print('Building model for label:', label)
 clf.fit(X_train, y_train)
 
-print('Predicting on test data for label:', label)
+#print('Predicting on test data for label:', label)
 y_pred = clf.predict(X_test)
 y_prob = clf.predict_proba(X_test) #get probabilities for AUC
-probs = y_prob[:,1]
-
-print('Calculating AUC score...')
-plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
-
-print('Calculating metrics for:', label)
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-print("Precision:",metrics.precision_score(y_test, y_pred))
-print("Recall:",metrics.recall_score(y_test, y_pred))
-
-print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
-
-print()
+# probs = y_prob[:,1]
+#
+# print('Calculating AUC score...')
+# plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
+#
+# print('Calculating metrics for:', label)
+# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+# print("Precision:",metrics.precision_score(y_test, y_pred))
+# print("Recall:",metrics.recall_score(y_test, y_pred))
+#
+# print('Plotting:', label)
+# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+#
+# print()

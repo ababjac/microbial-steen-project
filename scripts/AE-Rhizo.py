@@ -96,7 +96,7 @@ class Autoencoder(ks.models.Model):
 def create_AE(actual_dim=1, latent_dim=100, activation='relu', loss='MAE', optimizer='Adam'):
     return Autoencoder(actual_dim, latent_dim, activation, loss, optimizer)
 
-print('Reading data...')
+#print('Reading data...')
 metadata = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_metadata.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_metadata.csv'))
 otu_features = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_otu.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_otu.csv'))
 otu_T = otu_features.T
@@ -107,7 +107,7 @@ data = metadata.join(otu_T)
 ids = data.index.values.tolist()
 label_strings = data['drought_tolerance']
 
-print('Splitting data...')
+#print('Splitting data...')
 features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
@@ -115,7 +115,7 @@ features = pd.get_dummies(features)
 labels = pd.get_dummies(label_strings)['HI30']
 #print(labels)
 
-print('Cleaning features...')
+#print('Cleaning features...')
 remove = [col for col in features.columns if features[col].isna().sum() != 0]
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 #print(features)
@@ -124,11 +124,11 @@ print()
 
 label = 'drought_tolerance'
 
-print('Scaling data...')
+#print('Scaling data...')
 X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
 X_train_scaled, X_test_scaled = scale(X_train, X_test)
 
-print('Building autoencoder model...')
+#print('Building autoencoder model...')
 params_AE = {
     'actual_dim' : [len(features.columns)],
     'latent_dim' : [10, 50, 100, 200],
@@ -143,12 +143,12 @@ grid = GridSearchCV(
     param_grid=params_AE,
     cv=5,
 #    n_jobs=3,
-    verbose=3
+    verbose=0
 )
 
 result = grid.fit(X_train_scaled, X_train_scaled, validation_data=(X_test_scaled, X_test_scaled))
 params = grid.best_params_
-print(params)
+#print(params)
 autoencoder = create_AE(**params)
 
 try:
@@ -166,7 +166,7 @@ print(AE_train.shape)
 AE_train = preprocessing.scale(AE_train)
 AE_test = preprocessing.scale(AE_test)
 
-print('Predicting with SVM...')
+#print('Predicting with SVM...')
 
 
 params = {
@@ -181,26 +181,26 @@ clf = GridSearchCV(
     param_grid=params,
     cv=5,
     n_jobs=5,
-    verbose=3
+    verbose=0
 )
 
-print('Building model for label:', label)
+#print('Building model for label:', label)
 clf.fit(AE_train, y_train)
 
-print('Predicting on test data for label:', label)
+#print('Predicting on test data for label:', label)
 y_pred = clf.predict(AE_test)
 y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
-probs = y_prob[:,1]
-
-print('Calculating AUC score...')
-plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
-
-print('Calculating metrics for:', label)
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-print("Precision:",metrics.precision_score(y_test, y_pred))
-print("Recall:",metrics.recall_score(y_test, y_pred))
-
-print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
-
-print()
+# probs = y_prob[:,1]
+#
+# print('Calculating AUC score...')
+# plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+#
+# print('Calculating metrics for:', label)
+# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+# print("Precision:",metrics.precision_score(y_test, y_pred))
+# print("Recall:",metrics.recall_score(y_test, y_pred))
+#
+# print('Plotting:', label)
+# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+#
+# print()

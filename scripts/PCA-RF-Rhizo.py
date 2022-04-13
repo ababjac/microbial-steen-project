@@ -1,14 +1,20 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.linear_model import Lasso
 import seaborn as sns
 from sklearn import svm, metrics, preprocessing
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.pipeline import Pipeline
+from sklearn.decomposition import PCA
+import plotly.express as px
+from imblearn.over_sampling import SMOTE
 import chardet
 from sklearn.metrics import roc_curve, auc
+
+def detect_encoding(file):
+    guess = chardet.detect(open(file, 'rb').read())['encoding']
+    return guess
 
 def plot_confusion_matrix(y_pred, y_actual, title, filename):
     plt.gca().set_aspect('equal')
@@ -20,7 +26,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     #print(cf_matrix)
 
-    ax = sns.heatmap(cf_matrix, annot=True, cmap='Reds')
+    ax = sns.heatmap(cf_matrix, annot=True, cmap='Greens')
 
     ax.set_title(title+'\n\n');
     ax.set_xlabel('\nPredicted Values')
@@ -31,8 +37,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
     ax.yaxis.set_ticklabels(['False','True'])
 
     ## Display the visualization of the Confusion Matrix.
-    plt.tight_layout()
-    plt.savefig('images/SVM/confusion-matrix/Rhizo/Lasso/'+filename)
+    plt.savefig('images/RF/confusion-matrix/Rhizo/PCA/'+filename)
     plt.close()
 
 def plot_auc(y_pred, y_actual, title, filename):
@@ -42,17 +47,27 @@ def plot_auc(y_pred, y_actual, title, filename):
 
     plt.title(title)
     plt.legend()
-    plt.savefig('images/SVM/AUC/Rhizo/Lasso/'+filename)
+    plt.savefig('images/RF/AUC/Rhizo/PCA/'+filename)
     plt.close()
 
-def detect_encoding(file):
-    guess = chardet.detect(open(file, 'rb').read())['encoding']
-    return guess
+def plot_pca(colors, pca, components, filename):
 
-def scale(train, test):
-    xtrain_scaled = pd.DataFrame(StandardScaler().fit_transform(train), columns=train.columns)
-    xtest_scaled = pd.DataFrame(StandardScaler().fit_transform(test), columns=test.columns)
-    return xtrain_scaled, xtest_scaled
+    labels = {
+        str(i): f"PC {i+1} ({var:.1f}%)"
+        for i, var in enumerate(pca.explained_variance_ratio_ * 100)
+    }
+
+    print(labels)
+    fig = px.scatter_matrix(
+        components,
+        labels=labels,
+        dimensions=range(9),
+        color=colors
+    )
+
+    fig.update_traces(diagonal_visible=False)
+    fig.write_image(filename)
+
 
 print('Reading data...')
 metadata = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_metadata.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_metadata.csv'))
@@ -66,7 +81,7 @@ ids = data.index.values.tolist()
 label_strings = data['drought_tolerance']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])]#, 'irrigation', 'habitat'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
@@ -82,45 +97,38 @@ print()
 
 label = 'drought_tolerance'
 
-print('Scaling data...')
-X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
-X_train_scaled, X_test_scaled = scale(X_train, X_test)
+print('Running PCA...')
+pca_model = PCA(n_components=0.9) #make 9 components for 9 ocean regions
+pca_features = pca_model.fit_transform(features)
 
-print('Doing feature selection with Lasso...')
-pipeline = Pipeline([('scaler',StandardScaler()), ('model',Lasso())])
-search = GridSearchCV(pipeline,
-                      {'model__alpha':np.arange(0.1, 10, 0.1)},
-                      cv = 5, scoring="neg_mean_squared_error",verbose=3
-                      )
-search.fit(X_train, y_train)
-coefficients = search.best_estimator_.named_steps['model'].coef_
-importance = np.abs(coefficients)
-#print(list(importance))
-remove = np.array(features.columns)[importance == 0]
+#plot_pca(master_labels, pca_model, pca_features, 'images/PCA/nc_9.png')
 
-if len(remove) < len(features.columns): #if everything is not important then no feature selection can occur
-    X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
-    X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
+pca_features_df = pd.DataFrame(pca_features)
 
-X_train = preprocessing.scale(X_train)
-X_test = preprocessing.scale(X_test)
-
-print('Predicting with SVM...')
+#sm = SMOTE(k_neighbors=1, random_state=55)
 
 params = {
-    'C': [0.1, 1, 10, 100, 1000],
-    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    'kernel': ['rbf', 'linear'],
-    'probability': [True]
+    'n_estimators': [200, 500],
+    'max_features': ['auto', 'sqrt', 'log2'],
+    'max_depth' : [4,5,6,7,8],
+    'criterion' :['gini', 'entropy'],
 }
 
 clf = GridSearchCV(
-    estimator=svm.SVC(),
+    estimator=RandomForestClassifier(),
     param_grid=params,
     cv=5,
     n_jobs=5,
     verbose=3
 )
+#print(clf.best_params_)
+
+#print('Running SVM...')
+
+#X_res, y_res = sm.fit_resample(pca_features_df, labels)
+X_train, X_test, y_train, y_test = train_test_split(pca_features_df, labels, test_size=0.3, random_state=5)#, shuffle=True, stratify=labels[label]) # 70% training and 30% test
+X_train = preprocessing.scale(X_train)
+X_test = preprocessing.scale(X_test)
 
 print('Building model for label:', label)
 clf.fit(X_train, y_train)

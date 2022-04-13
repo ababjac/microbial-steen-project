@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import Lasso
 import seaborn as sns
 from sklearn import svm, metrics, preprocessing
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.pipeline import Pipeline
@@ -32,7 +33,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     ## Display the visualization of the Confusion Matrix.
     plt.tight_layout()
-    plt.savefig('images/SVM/confusion-matrix/Rhizo/Lasso/'+filename)
+    plt.savefig('images/RF/confusion-matrix/GEM/Lasso/'+filename)
     plt.close()
 
 def plot_auc(y_pred, y_actual, title, filename):
@@ -42,7 +43,7 @@ def plot_auc(y_pred, y_actual, title, filename):
 
     plt.title(title)
     plt.legend()
-    plt.savefig('images/SVM/AUC/Rhizo/Lasso/'+filename)
+    plt.savefig('images/RF/AUC/GEM/Lasso/'+filename)
     plt.close()
 
 def detect_encoding(file):
@@ -54,23 +55,42 @@ def scale(train, test):
     xtest_scaled = pd.DataFrame(StandardScaler().fit_transform(test), columns=test.columns)
     return xtrain_scaled, xtest_scaled
 
+def normalize_abundances(df):
+    norm_df = pd.DataFrame()
+
+    #normalize abundances
+    for c in df.columns:
+        if not c.__contains__('genome_id'):
+            #total = condensed.loc[:, c].sum()
+            total = df.loc[:, c].sum()
+
+            if total == 0: #skip because there is no point in predicting these sites
+                continue
+
+            norm_df[c] = df[c] / total
+
+    norm_df['genome_id'] = df['genome_id']
+    return norm_df
+
 print('Reading data...')
-metadata = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_metadata.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_metadata.csv'))
-otu_features = pd.read_csv('files/data/rhizo_data/ITS_rhizosphere_otu.csv', header=0, index_col=0, encoding=detect_encoding('files/data/rhizo_data/ITS_rhizosphere_otu.csv'))
-otu_T = otu_features.T
+metadata = pd.read_csv('files/data/GEM_metadata.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/GEM_metadata.tsv'))
+annot_features = pd.read_csv('files/data/annotation_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/annotation_features_counts_wide.tsv'))
+annot_features = normalize_abundances(annot_features)
+path_features = pd.read_csv('files/data/pathway_features_counts_wide.tsv', sep='\t', header=0, encoding=detect_encoding('files/data/pathway_features_counts_wide.tsv'))
+path_features = normalize_abundances(path_features)
 
-data = metadata.join(otu_T)
-#print(data)
+data = pd.merge(metadata, path_features, on='genome_id', how='inner')
+data = pd.merge(data, annot_features, on='genome_id', how='inner')
 
-ids = data.index.values.tolist()
-label_strings = data['drought_tolerance']
+ids = data['genome_id']
+label_strings = data['cultured.status']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'completeness'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
-labels = pd.get_dummies(label_strings)['HI30']
+labels = pd.get_dummies(label_strings)['cultured']
 #print(labels)
 
 print('Cleaning features...')
@@ -80,7 +100,7 @@ features = features.loc[:, ~features.columns.isin(remove)] #remove columns with 
 
 print()
 
-label = 'drought_tolerance'
+label = 'cultured'
 
 print('Scaling data...')
 X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.3, random_state=5)
@@ -95,27 +115,25 @@ search = GridSearchCV(pipeline,
 search.fit(X_train, y_train)
 coefficients = search.best_estimator_.named_steps['model'].coef_
 importance = np.abs(coefficients)
-#print(list(importance))
 remove = np.array(features.columns)[importance == 0]
 
-if len(remove) < len(features.columns): #if everything is not important then no feature selection can occur
-    X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
-    X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
-
-X_train = preprocessing.scale(X_train)
-X_test = preprocessing.scale(X_test)
+X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
+X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
+#X_train = preprocessing.scale(X_train)
+#X_test = preprocessing.scale(X_test)
 
 print('Predicting with SVM...')
 
+
 params = {
-    'C': [0.1, 1, 10, 100, 1000],
-    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    'kernel': ['rbf', 'linear'],
-    'probability': [True]
+    'n_estimators': [200, 500],
+    'max_features': ['auto', 'sqrt', 'log2'],
+    'max_depth' : [4,5,6,7,8],
+    'criterion' :['gini', 'entropy'],
 }
 
 clf = GridSearchCV(
-    estimator=svm.SVC(),
+    estimator=RandomForestClassifier(),
     param_grid=params,
     cv=5,
     n_jobs=5,
@@ -131,7 +149,7 @@ y_prob = clf.predict_proba(X_test) #get probabilities for AUC
 probs = y_prob[:,1]
 
 print('Calculating AUC score...')
-plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
+plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
 
 print('Calculating metrics for:', label)
 print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
@@ -139,6 +157,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
 
 print()

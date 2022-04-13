@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import Lasso
 import seaborn as sns
 from sklearn import svm, metrics, preprocessing
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.pipeline import Pipeline
@@ -32,7 +33,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     ## Display the visualization of the Confusion Matrix.
     plt.tight_layout()
-    plt.savefig('images/SVM/confusion-matrix/Rhizo/Lasso/'+filename)
+    plt.savefig('images/RF/confusion-matrix/Rhizo/Lasso/'+filename)
     plt.close()
 
 def plot_auc(y_pred, y_actual, title, filename):
@@ -42,7 +43,7 @@ def plot_auc(y_pred, y_actual, title, filename):
 
     plt.title(title)
     plt.legend()
-    plt.savefig('images/SVM/AUC/Rhizo/Lasso/'+filename)
+    plt.savefig('images/RF/AUC/Rhizo/Lasso/'+filename)
     plt.close()
 
 def detect_encoding(file):
@@ -66,7 +67,7 @@ ids = data.index.values.tolist()
 label_strings = data['drought_tolerance']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene', 'irrigation', 'habitat'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['drought_tolerance', 'marker_gene'])]#, 'irrigation', 'habitat'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
@@ -102,20 +103,21 @@ if len(remove) < len(features.columns): #if everything is not important then no 
     X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
     X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
 
-X_train = preprocessing.scale(X_train)
-X_test = preprocessing.scale(X_test)
+#X_train = preprocessing.scale(X_train)
+#X_test = preprocessing.scale(X_test)
 
 print('Predicting with SVM...')
 
+
 params = {
-    'C': [0.1, 1, 10, 100, 1000],
-    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    'kernel': ['rbf', 'linear'],
-    'probability': [True]
+    'n_estimators': [200, 500],
+    'max_features': ['auto', 'sqrt', 'log2'],
+    'max_depth' : [4,5,6,7,8],
+    'criterion' :['gini', 'entropy'],
 }
 
 clf = GridSearchCV(
-    estimator=svm.SVC(),
+    estimator=RandomForestClassifier(),
     param_grid=params,
     cv=5,
     n_jobs=5,

@@ -33,7 +33,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     ## Display the visualization of the Confusion Matrix.
     plt.tight_layout()
-    plt.savefig('images/confusion-matrix/TARA/Lasso/'+filename)
+    plt.savefig('images/SVM/confusion-matrix/TARA/Lasso/'+filename)
     plt.close()
 
 def plot_auc(y_pred, y_actual, title, filename):
@@ -43,7 +43,7 @@ def plot_auc(y_pred, y_actual, title, filename):
 
     plt.title(title)
     plt.legend()
-    plt.savefig('images/AUC/TARA/Lasso/'+filename)
+    plt.savefig('images/SVM/AUC/TARA/Lasso/'+filename)
     plt.close()
 
 def detect_encoding(file):
@@ -55,7 +55,7 @@ def scale(train, test):
     xtest_scaled = pd.DataFrame(StandardScaler().fit_transform(test), columns=test.columns)
     return xtrain_scaled, xtest_scaled
 
-#print('Reading data...')
+print('Reading data...')
 data = pd.read_csv('files/data/condensedKO_features.csv', index_col=0)
 labels = pd.read_csv('files/data/labels.csv', index_col=0)
 
@@ -66,7 +66,7 @@ master_labels = int_labels.idxmax(axis=1)
 
 sites = data['site']
 
-#print('Splitting data...')
+print('Splitting data...')
 #features = data.loc[:, ~data.columns.isin(['site'])] #get rid of labels
 features = data.loc[:, ~data.columns.isin(['site', 'Station.label','Layer','polar','lower.size.fraction','upper.size.fraction','Event.date','Latitude','Longitude','Depth.nominal',
 'Ocean.region','Temperature','Oxygen','ChlorophyllA','Carbon.total','Salinity','Gradient.Surface.temp(SST)','Fluorescence','CO3','HCO3','Density','PO4','PAR.PC','NO3','Si',
@@ -77,7 +77,7 @@ features = pd.get_dummies(features)
 labels = labels.loc[:, ~labels.columns.isin(['site'])]
 #print(labels)
 
-#print('Cleaning features...')
+print('Cleaning features...')
 remove = [col for col in features.columns if features[col].isna().sum() != 0 or col.__contains__('Ocean.region')]
 features = features.loc[:, ~features.columns.isin(remove)] #remove columns with too many missing values
 #print(features)
@@ -96,21 +96,21 @@ clf = GridSearchCV(
     param_grid=params,
     cv=5,
     n_jobs=5,
-    verbose=0
+    verbose=3
 )
 
 for label in labels.columns:
 
-    #print('Scaling data...')
+    print('Scaling data...')
     X_res, y_res = sm.fit_resample(features, labels[label])
     X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.3, random_state=5)
 
 
-    #print('Doing feature selection with Lasso...')
+    print('Doing feature selection with Lasso...')
     pipeline = Pipeline([('scaler',StandardScaler()), ('model',Lasso())])
     search = GridSearchCV(pipeline,
                         {'model__alpha':np.arange(0.1, 10, 0.1)},
-                        cv = 5, scoring="neg_mean_squared_error",verbose=0
+                        cv = 5, scoring="neg_mean_squared_error",verbose=3
                         )
     search.fit(X_train, y_train)
     coefficients = search.best_estimator_.named_steps['model'].coef_
@@ -124,25 +124,25 @@ for label in labels.columns:
     X_train = preprocessing.scale(X_train)
     X_test = preprocessing.scale(X_test)
 
-    #print('Predicting with SVM...')
+    print('Predicting with SVM...')
 
-    #print('Building model for label:', label)
+    print('Building model for label:', label)
     clf.fit(X_train, y_train)
 
-    #print('Predicting on test data for label:', label)
+    print('Predicting on test data for label:', label)
     y_pred = clf.predict(X_test)
     y_prob = clf.predict_proba(X_test) #get probabilities for AUC
-    # probs = y_prob[:,1]
-    #
-    # print('Calculating AUC score...')
-    # plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
-    #
-    # print('Calculating metrics for:', label)
-    # print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    # print("Precision:",metrics.precision_score(y_test, y_pred))
-    # print("Recall:",metrics.recall_score(y_test, y_pred))
-    #
-    # print('Plotting:', label)
-    # plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
-    #
-    # print()
+    probs = y_prob[:,1]
+
+    print('Calculating AUC score...')
+    plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+
+    print('Calculating metrics for:', label)
+    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    print("Precision:",metrics.precision_score(y_test, y_pred))
+    print("Recall:",metrics.recall_score(y_test, y_pred))
+
+    print('Plotting:', label)
+    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+
+    print()

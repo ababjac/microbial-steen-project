@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import svm, metrics, preprocessing
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
@@ -31,7 +32,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
     ax.yaxis.set_ticklabels(['False','True'])
 
     ## Display the visualization of the Confusion Matrix.
-    plt.savefig('images/SVM/confusion-matrix/TARA/PCA/'+filename)
+    plt.savefig('images/RF/confusion-matrix/TARA/PCA/'+filename)
     plt.close()
 
 def plot_auc(y_pred, y_actual, title, filename):
@@ -41,7 +42,7 @@ def plot_auc(y_pred, y_actual, title, filename):
 
     plt.title(title)
     plt.legend()
-    plt.savefig('images/SVM/AUC/TARA/PCA/'+filename)
+    plt.savefig('images/RF/AUC/TARA/PCA/'+filename)
     plt.close()
 
 def plot_pca(colors, pca, components, filename):
@@ -106,14 +107,14 @@ sm = SMOTE(k_neighbors=1, random_state=55)
 #features_res, labels_res = sm.fit_resample(features, labels)
 
 params = {
-    'C': [0.1, 1, 10, 100, 1000],
-    'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
-    'kernel': ['rbf', 'linear'],
-    'probability': [True]
+    'n_estimators': [200, 500],
+    'max_features': ['auto', 'sqrt', 'log2'],
+    'max_depth' : [4,5,6,7,8],
+    'criterion' :['gini', 'entropy'],
 }
 
 clf = GridSearchCV(
-    estimator=svm.SVC(),
+    estimator=RandomForestClassifier(),
     param_grid=params,
     cv=5,
     n_jobs=5,

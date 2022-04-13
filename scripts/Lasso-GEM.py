@@ -32,7 +32,7 @@ def plot_confusion_matrix(y_pred, y_actual, title, filename):
 
     ## Display the visualization of the Confusion Matrix.
     plt.tight_layout()
-    plt.savefig('images/confusion-matrix/GEM/Lasso/'+filename)
+    plt.savefig('images/SVM/confusion-matrix/GEM/Lasso/'+filename)
     plt.close()
 
 def plot_auc(y_pred, y_actual, title, filename):
@@ -42,7 +42,7 @@ def plot_auc(y_pred, y_actual, title, filename):
 
     plt.title(title)
     plt.legend()
-    plt.savefig('images/AUC/GEM/Lasso/'+filename)
+    plt.savefig('images/SVM/AUC/GEM/Lasso/'+filename)
     plt.close()
 
 def detect_encoding(file):
@@ -85,7 +85,7 @@ ids = data['genome_id']
 label_strings = data['cultured.status']
 
 print('Splitting data...')
-features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status', 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'completeness'])] #get rid of labels
+features = data.loc[:, ~data.columns.isin(['genome_id', 'cultured.status'])]#, 'culture.level', 'taxonomic.dist', 'domain', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'completeness'])] #get rid of labels
 features = pd.get_dummies(features)
 #print(features)
 
@@ -118,8 +118,8 @@ remove = np.array(features.columns)[importance == 0]
 
 X_train = X_train.loc[:, ~X_train.columns.isin(remove)]
 X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
-X_train = preprocessing.scale(X_train)
-X_test = preprocessing.scale(X_test)
+#X_train = preprocessing.scale(X_train)
+#X_test = preprocessing.scale(X_test)
 
 print('Predicting with SVM...')
 
@@ -145,17 +145,17 @@ clf.fit(X_train, y_train)
 print('Predicting on test data for label:', label)
 y_pred = clf.predict(X_test)
 y_prob = clf.predict_proba(X_test) #get probabilities for AUC
-# probs = y_prob[:,1]
-#
-# print('Calculating AUC score...')
-# plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
-#
-# print('Calculating metrics for:', label)
-# print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-# print("Precision:",metrics.precision_score(y_test, y_pred))
-# print("Recall:",metrics.recall_score(y_test, y_pred))
-#
-# print('Plotting:', label)
-# plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
-#
-# print()
+probs = y_prob[:,1]
+
+print('Calculating AUC score...')
+plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-noscale.png')
+
+print('Calculating metrics for:', label)
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+print("Precision:",metrics.precision_score(y_test, y_pred))
+print("Recall:",metrics.recall_score(y_test, y_pred))
+
+print('Plotting:', label)
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-noscale.png')
+
+print()

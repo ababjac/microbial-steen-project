@@ -139,6 +139,7 @@ params_AE = {
 }
 
 model = KerasClassifier(build_fn=create_AE, epochs=10, verbose=3)
+#print(model.get_params().keys())
 grid = GridSearchCV(
     estimator=model,
     param_grid=params_AE,

@@ -34,3 +34,16 @@ def plot_confusion_matrix(cf_matrix, title, filename, color):
 #plot_confusion_matrix([[13000,0],[0,3000]], 'cultured', 'images/confusion-matrix/GEM/Lasso/cultured_CM.png', 'Reds')
 #plot_confusion_matrix([[13000,0],[3000,0]], 'cultured', 'images/confusion-matrix/GEM/Lasso/cultured_CM-nometa.png', 'Reds')
 #plot_confusion_matrix([[31,1],[3,3]], 'NP', 'images/confusion-matrix/TARA/Lasso/NP_CM.png', 'Reds')
+
+plot_confusion_matrix([[4,5],[6,4]], 'Drought Tolerance', 'images/RF/confusion-matrix/Rhizo/tSNE/drought_tolerance_CM.png', 'Purples')
+plot_confusion_matrix([[2,7],[3,7]], 'Drought Tolerance', 'images/RF/confusion-matrix/Rhizo/tSNE/drought_tolerance_CM-nometa.png', 'Purples')
+
+plot_confusion_matrix([[14,18],[13,12]], 'AO', 'images/RF/confusion-matrix/TARA/tSNE/AO_CM.png', 'Purples')
+plot_confusion_matrix([[23,18],[11,17]], 'IO', 'images/RF/confusion-matrix/TARA/tSNE/IO_CM.png', 'Purples')
+plot_confusion_matrix([[28,8],[25,13]], 'MS', 'images/RF/confusion-matrix/TARA/tSNE/MS_CM.png', 'Purples')
+plot_confusion_matrix([[20,17],[16,11]], 'NAT', 'images/RF/confusion-matrix/TARA/tSNE/NAT_CM.png', 'Purples')
+plot_confusion_matrix([[27,9],[24,6]], 'NP', 'images/RF/confusion-matrix/TARA/tSNE/NP_CM.png', 'Purples')
+plot_confusion_matrix([[30,7],[31,5]], 'RS', 'images/RF/confusion-matrix/TARA/tSNE/RS_CM.png', 'Purples')
+plot_confusion_matrix([[28,8],[19,11]], 'SAT', 'images/RF/confusion-matrix/TARA/tSNE/SAT_CM.png', 'Purples')
+plot_confusion_matrix([[30,7],[29,7]], 'SO', 'images/RF/confusion-matrix/TARA/tSNE/SO_CM.png', 'Purples')
+plot_confusion_matrix([[16,5],[22,14]], 'SP', 'images/RF/confusion-matrix/TARA/tSNE/SP_CM.png', 'Purples')

@@ -52,5 +52,5 @@ def plot_confusion_matrix(cf_matrix, title, filename, color):
 # plot_confusion_matrix([[1.2e+04, 7.1e+02],[2.7e+03,3.2e+02]], 'cultured', 'images/RF/confusion-matrix/GEM/tSNE/cultured_CM.png', 'Purples')
 # plot_confusion_matrix([[1.2e+04, 8.7e+02],[2.6e+03,3.4e+02]], 'cultured', 'images/RF/confusion-matrix/GEM/tSNE/cultured_CM-nometa.png', 'Purples')
 
-plot_confusion_matrix([[1.3e+04, 18],[1.6e+03,1.3e+03]], 'Cultured', 'images/RF/tmp/cultured_CM.png', 'Oranges')
-plot_confusion_matrix([[1.3e+04, 56],[2e+03,1e+03]], 'Cultured (excluding metadata)', 'images/RF/tmp/cultured_CM-nometa.png', 'Oranges')
+plot_confusion_matrix([[1.3e+04, 18],[1.6e+03,1.3e+03]], 'Cultured', 'images/RF/tmp/cultured_CM.png', 'Wistia')
+plot_confusion_matrix([[1.3e+04, 56],[2e+03,1e+03]], 'Cultured (excluding metadata)', 'images/RF/tmp/cultured_CM-nometa.png', 'Wistia')

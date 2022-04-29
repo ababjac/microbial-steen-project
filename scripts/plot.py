@@ -48,6 +48,9 @@ def plot_confusion_matrix(cf_matrix, title, filename, color):
 # plot_confusion_matrix([[30,7],[29,7]], 'SO', 'images/RF/confusion-matrix/TARA/tSNE/SO_CM.png', 'Purples')
 # plot_confusion_matrix([[16,5],[22,14]], 'SP', 'images/RF/confusion-matrix/TARA/tSNE/SP_CM.png', 'Purples')
 
-plot_confusion_matrix([[9, 0],[10,0]], 'drought_tolerance', 'images/SVM/confusion-matrix/Rhizo/tSNE/drought_tolerance_CM.png', 'Purples')
-plot_confusion_matrix([[1.2e+04, 7.1e+02],[2.7e+03,3.2e+02]], 'cultured', 'images/RF/confusion-matrix/GEM/tSNE/cultured_CM.png', 'Purples')
-plot_confusion_matrix([[1.2e+04, 8.7e+02],[2.6e+03,3.4e+02]], 'cultured', 'images/RF/confusion-matrix/GEM/tSNE/cultured_CM-nometa.png', 'Purples')
+# plot_confusion_matrix([[9, 0],[10,0]], 'drought_tolerance', 'images/SVM/confusion-matrix/Rhizo/tSNE/drought_tolerance_CM.png', 'Purples')
+# plot_confusion_matrix([[1.2e+04, 7.1e+02],[2.7e+03,3.2e+02]], 'cultured', 'images/RF/confusion-matrix/GEM/tSNE/cultured_CM.png', 'Purples')
+# plot_confusion_matrix([[1.2e+04, 8.7e+02],[2.6e+03,3.4e+02]], 'cultured', 'images/RF/confusion-matrix/GEM/tSNE/cultured_CM-nometa.png', 'Purples')
+
+plot_confusion_matrix([[1.3e+04, 18],[1.6e+03,1.3e+03]], 'Cultured', 'images/RF/tmp/cultured_CM.png', 'Oranges')
+plot_confusion_matrix([[1.3e+04, 56],[2e+03,1e+03]], 'Cultured (excluding metadata)', 'images/RF/tmp/cultured_CM-nometa.png', 'Oranges')

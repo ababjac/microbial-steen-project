@@ -1,37 +1,22 @@
+PCA
 Time: 1:05.26, Memory: 0
 Time: 1:08.87, Memory: 0
 Time: 1:07.96, Memory: 0
 Time: 1:07.26, Memory: 0
 Time: 1:18.40, Memory: 0
 
+LASSO
 Time: 38:35.46, Memory: 0
 Time: 34:53.69, Memory: 0
 Time: 33:33.12, Memory: 0
 Time: 32:37.70, Memory: 0
 Time: 33:11.86, Memory: 0
 
+AE
 Time: 1:47:51, Memory: 0
 Time: 1:49:54, Memory: 0
 Time: 1:52:39, Memory: 0
 Time: 1:51:28, Memory: 0
 Time: 1:45:40, Memory: 0
-Command terminated by signal 2
-Time: 0:00.18, Memory: 0
-Command terminated by signal 2
-Time: 0:00.12, Memory: 0
-Command terminated by signal 2
-Time: 0:00.16, Memory: 0
-Command terminated by signal 2
-Time: 0:00.16, Memory: 0
-Command terminated by signal 2
-Time: 0:00.20, Memory: 0
-Command exited with non-zero status 1
-Time: 0:00.00, Memory: 0
-Command terminated by signal 2
-Time: 0:00.28, Memory: 0
-Command exited with non-zero status 1
-Time: 0:00.04, Memory: 0
-Command terminated by signal 2
-Time: 0:00.00, Memory: 0
-Command exited with non-zero status 1
-Time: 0:00.02, Memory: 0
+
+t-SNE

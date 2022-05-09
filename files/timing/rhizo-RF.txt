@@ -1,0 +1,23 @@
+Time: 0:39.65, Memory: 0
+Time: 0:39.68, Memory: 0
+Time: 0:39.88, Memory: 0
+Time: 0:38.85, Memory: 0
+Time: 0:39.62, Memory: 0
+
+Time: 4:23.99, Memory: 0
+Time: 4:24.71, Memory: 0
+Time: 4:24.47, Memory: 0
+Time: 4:23.64, Memory: 0
+Time: 4:24.09, Memory: 0
+
+Time: 1:36.20, Memory: 0
+Time: 1:34.44, Memory: 0
+Time: 1:34.57, Memory: 0
+Time: 1:32.57, Memory: 0
+Time: 1:34.10, Memory: 0
+
+Time: 7:22.76, Memory: 0
+Time: 7:15.33, Memory: 0
+Time: 7:17.43, Memory: 0
+Time: 7:19.16, Memory: 0
+Time: 7:15.01, Memory: 0

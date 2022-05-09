@@ -1,0 +1,23 @@
+PCA:
+Time: 0:24.02, Memory: 0
+Time: 0:25.57, Memory: 0
+Time: 0:20.15, Memory: 0
+Time: 0:16.71, Memory: 0
+Time: 0:23.29, Memory: 0
+
+t-SNE:
+Time: 8:11:40, Memory: 0
+Time: 7:56:10, Memory: 0
+Time: 9:22:06, Memory: 0
+Time: 6:47:39, Memory: 0
+Time: 6:54:39, Memory: 0
+
+AE:
+Time: 10:22.54, Memory: 0
+Time: 10:26.67, Memory: 0
+
+LASSO:
+Time: 3:12.57, Memory: 0
+Time: 3:19.52, Memory: 0
+Time: 3:21.26, Memory: 0
+Time: 3:54.50, Memory: 0

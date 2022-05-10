@@ -85,7 +85,8 @@ expr_features.rename(columns={'index':'SampleID'}, inplace=True)
 
 data = pd.merge(metadata, expr_features, on='SampleID', how='inner')
 
-data['Resistant'] =  np.where(data['Clearance'] > 6.0, 1, 0)
+data = data[(data['Clearance'] >= 6) | (data['Clearance'] < 4)]
+data['Resistant'] =  np.where(data['Clearance'] >= 6.0, 1, 0)
 ids = data['SampleID']
 
 print('Splitting data...')
@@ -93,7 +94,7 @@ labels = data['Resistant']
 
 
 features = data.loc[:, ~data.columns.isin(['Clearance', 'Resistant', 'SampleID', 'GenotypeID', 'SampleID.Pf3k', 'Parasites clearance time', 'Field_site'])]
-features = features.loc[:, ~features.columns.isin(['FieldsiteName', 'Country', 'Hemoglobin(g/dL)', 'Hematocrit(%)', 'parasitemia', 'Parasite count', 'Sample collection time(24hr)', 'Patient temperature', 'Drug', 'ACT_partnerdrug', 'Duration of lag phase', 'PC50', 'PC90', 'Estimated HPI', 'Estimated gametocytes proportion', 'ArtRFounders', 'Timepoint', 'RNA', 'Asexual_stage', 'Lifestage', 'Long_class'])]
+#features = features.loc[:, ~features.columns.isin(['FieldsiteName', 'Country', 'Hemoglobin(g/dL)', 'Hematocrit(%)', 'parasitemia', 'Parasite count', 'Sample collection time(24hr)', 'Patient temperature', 'Drug', 'ACT_partnerdrug', 'Duration of lag phase', 'PC50', 'PC90', 'Estimated HPI', 'Estimated gametocytes proportion', 'ArtRFounders', 'Timepoint', 'RNA', 'Asexual_stage', 'Lifestage', 'Long_class'])]
 features = pd.get_dummies(features)
 #print(labels)
 
@@ -128,8 +129,8 @@ X_test = X_test.loc[:, ~X_test.columns.isin(remove)]
 
 print('Predicting with SVM...')
 
-sm = SMOTE(k_neighbors=3, random_state=555)
-X_test, y_test = sm.fit_resample(X_test, y_test)
+#sm = SMOTE(k_neighbors=3, random_state=555)
+#X_test, y_test = sm.fit_resample(X_test, y_test)
 
 params = {
     'C': [0.1, 1, 10, 100, 1000],
@@ -155,7 +156,7 @@ y_prob = clf.predict_proba(X_test) #get probabilities for AUC
 probs = y_prob[:,1]
 
 print('Calculating AUC score...')
-plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nometa.png')
+plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nosmote.png')
 
 print('Calculating metrics for:', label)
 print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
@@ -163,6 +164,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nometa.png')
+plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nosmote.png')
 
 print()

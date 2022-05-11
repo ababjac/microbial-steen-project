@@ -178,7 +178,7 @@ for label in labels.columns:
     probs = y_prob[:,1]
 
     print('Calculating AUC score...')
-    plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
+    #plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC.png')
 
     print('Calculating metrics for:', label)
     print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
@@ -186,6 +186,6 @@ for label in labels.columns:
     print("Recall:",metrics.recall_score(y_test, y_pred))
 
     print('Plotting:', label)
-    plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
+    #plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM.png')
 
     print()

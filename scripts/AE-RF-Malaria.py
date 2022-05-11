@@ -111,7 +111,7 @@ expr_features.rename(columns={'index':'SampleID'}, inplace=True)
 
 data = pd.merge(metadata, expr_features, on='SampleID', how='inner')
 
-data = data[(data['Clearance'] >= 6) | (data['Clearance'] < 4)]
+data = data[(data['Clearance'] >= 6) | (data['Clearance'] < 5)]
 data['Resistant'] =  np.where(data['Clearance'] >= 6.0, 1, 0)
 ids = data['SampleID']
 
@@ -174,8 +174,8 @@ AE_test.add_prefix('feature_')
 
 print('Predicting with SVM...')
 
-#sm = SMOTE(k_neighbors=3, random_state=555)
-#AE_test, y_test = sm.fit_resample(AE_test, y_test)
+sm = SMOTE(k_neighbors=3, random_state=555)
+AE_test, y_test = sm.fit_resample(AE_test, y_test)
 
 params = {
     'n_estimators': [200, 500],
@@ -201,7 +201,7 @@ y_prob = clf.predict_proba(AE_test) #get probabilities for AUC
 probs = y_prob[:,1]
 
 print('Calculating AUC score...')
-plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-nosmote.png')
+#plot_auc(probs, y_test, 'AUC for '+label, label+'_AUC-combo.png')
 
 print('Calculating metrics for:', label)
 print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
@@ -209,6 +209,6 @@ print("Precision:",metrics.precision_score(y_test, y_pred))
 print("Recall:",metrics.recall_score(y_test, y_pred))
 
 print('Plotting:', label)
-plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-nosmote.png')
+#plot_confusion_matrix(y_pred=y_pred, y_actual=y_test, title=label, filename=label+'_CM-combo.png')
 
 print()

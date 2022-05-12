@@ -2,12 +2,19 @@ import os
 
 def parse_file(path):
     file = open(path)
-    memory = 0.0
+    mem = 0.0
+    prev_mem = 0.0
+    alloc_mem = 0.0
 
     for line in file.readlines()[1:]:
-        memory += float(line.split(' ')[1])
+        mem = float(line.split(' ')[1])
 
-    return memory
+        if mem > prev_mem:
+            alloc_mem += mem-prev_mem
+
+        prev_mem = mem
+
+    return alloc_mem
 
 DIR = 'files/memory/'
 OUT = open(DIR+'stats.txt', 'w')

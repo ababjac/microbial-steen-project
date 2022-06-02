@@ -1,35 +1,20 @@
 # microbial-steen-project
 
-Type of project: Analysis
-Group Members: Ashley Babjac (Solo)
+This project consists of code to implement dimensionality reduction combined with machine learning classification. Specifically, we have implemented a pipeline for using autoencoders/LASSO/PCA/tSNE with either SVM/Random Forests. We test our code using the preload datasets that can be found in files/data and which are loaded in scripts/preload.py.
 
-Main Idea:
-- It would be a major scientific finding to identify features of microbial genomes that are associated with that genome belonging to an uncultured organism
-- However, there is major phylogenetic bias in the organisms that are uncultured. All 200+ microbial phyla contain uncultured species, but most phyla do not contain cultured species.
-- Metabolism is strongly correlated to taxonomy, so therefore there’s a strong correlation between whether a species has been cultured and what its genome contains that probably isn’t related to whether it has been cultured
-- So: is there a way to control for phylogeny, when selecting features that distinguish between cultured and uncultured microbes?
+Our pipeline is implemented as follows:
+![plot](./images/architecture4.png)
 
-Description: This project is investigating the ability to use measures of abundance combined with metadata features to predict cultured/uncultured microbes. Elements of this project include:
-- Creating an analysis pipeline
-- Using a language other than R (Python)
-- Parsing data from tsv/csv files
-- Cleaning data
-- Successfully predicting cultured/uncultured microbes using combinations of models such as PCA/SVM/autoencoders
+To run our pipeline, please refer to the documentation (run **python3 scripts/driver.py --help** for more information.)
 
-Phase 1: Preliminary analysis using the TARA data completed. The PowerPoint slides detailing this phase of the analysis are under the "presentations" folder of this repo.
+Our code has been thoroughly tested to run on Linux using our preloaded datasets. If you would like to run our pipeline with a preloaded dataset, please make sure to extract it from the archive before running.
 
-Phase 2: In progress. Recreate a pipeline similar to the TARA analysis using the annoted genomes from the GEM dataset provided by Taylor Royalty. End goal of predicting cultured/uncultured microbes and understanding useful features derived from the analysis.
+*Note: We highly recommend you run our code on a server. These models can be computationally intensive. Memory/computational power on standard laptops/machines will likely be insufficient.*
 
-Current Conclusions:
-
-TARA -- 
-- TARA is easily modeled and represented by both PCA and autoencoders
-- Both perform well (average 90% accuracy) when predicting the ocean region
-- AE do a slightly better job representing the data
-
-GEM -- 
-- Data is large and noisy
-- Difficult to represent this with few dimensions but autoencoders do a good job reducing noise and sparsity in our features
-- Both PCA+AE run with SVM do not predict well (one is 50/50 the other is all false positives)
-- Need more time tuning the models to extract the important signals and better predict cultured/uncultured
-- Will be doing this with "vectorizing" the GEM data then piping through autoencoders (may switch to variational or deep AEs)
+Currently in progress:
+- Adding functionality for loading custom datasets
+- Creating example custom dataset
+- Adding functionality for specification of custom grid search parameters per model
+- Creating Linux/Windows/Mac executable versions of the codebase
+- Creating auto scripts to run entire model pipeline with standard parameters
+- Other bug fixes

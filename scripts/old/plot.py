@@ -3,18 +3,21 @@ import seaborn as sns
 
 
 def plot_confusion_matrix(cf_matrix, title, filename, color):
-    plt.gca().set_aspect('equal')
+    #plt.gca().set_aspect('equal')
+    plt.rc('font', size=16)
+
+
     #cf_matrix = metrics.confusion_matrix(y_actual, y_pred)
-    if len(cf_matrix) != 2: #if it predicts perfectly then confusion matrix returns incorrect form
-        val = cf_matrix[0][0]
-        tmp = [val, 0]
-        cf_matrix = np.array([tmp, [0, 0]])
+    #if len(cf_matrix) != 2: #if it predicts perfectly then confusion matrix returns incorrect form
+    #    val = cf_matrix[0][0]
+    #    tmp = [val, 0]
+    #    cf_matrix = np.array([tmp, [0, 0]])
 
     #print(cf_matrix)
 
     ax = sns.heatmap(cf_matrix, annot=True, cmap=color)
 
-    ax.set_title(title+'\n\n');
+    #ax.set_title(title+'\n\n');
     ax.set_xlabel('\nPredicted Values')
     ax.set_ylabel('Actual Values\n');
 
@@ -52,5 +55,10 @@ def plot_confusion_matrix(cf_matrix, title, filename, color):
 # plot_confusion_matrix([[1.2e+04, 7.1e+02],[2.7e+03,3.2e+02]], 'cultured', 'images/RF/confusion-matrix/GEM/tSNE/cultured_CM.png', 'Purples')
 # plot_confusion_matrix([[1.2e+04, 8.7e+02],[2.6e+03,3.4e+02]], 'cultured', 'images/RF/confusion-matrix/GEM/tSNE/cultured_CM-nometa.png', 'Purples')
 
-plot_confusion_matrix([[1.3e+04, 18],[1.6e+03,1.3e+03]], 'Cultured', 'images/RF/tmp/cultured_CM.png', 'Wistia')
-plot_confusion_matrix([[1.3e+04, 56],[2e+03,1e+03]], 'Cultured (excluding metadata)', 'images/RF/tmp/cultured_CM-nometa.png', 'Wistia')
+plot_confusion_matrix([[1.3e+04, 57],[8.7e+02,2.1e+03]], 'GEM - AE - SVM', 'images/cultured_CM-GEM-AE-SVM-nometa_new.png', 'Blues')
+plot_confusion_matrix([[1.3e+04, 2.5e+02],[2.1e+03,8.7e+02]], 'GEM - LASSO - SVM', 'images/cultured_CM-GEM-LASSO-SVM-nometa_new.png', 'Reds')
+
+plot_confusion_matrix([[1.3e+04, 56],[2e+03,1e+03]], 'GEM - AE - RF', 'images/cultured_CM-GEM-AE-RF-nometa_new.png', 'Blues')
+plot_confusion_matrix([[1.3e+04, 2.6e+02],[2.1e+03,9e+02]], 'GEM - LASSO - RF', 'images/cultured_CM-GEM-LASSO-RF-nometa_new.png', 'Reds')
+plot_confusion_matrix([[1.3e+04, 0],[2.9e+03,0]], 'GEM - PCA - RF', 'images/cultured_CM-GEM-PCA-RF-nometa_new.png', 'Greens')
+plot_confusion_matrix([[1.2e+04, 1e+03],[2.6e+03,4.2e+02]], 'GEM - tSNE - RF', 'images/cultured_CM-GEM-tSNE-RF-nometa_new.png', 'Purples')

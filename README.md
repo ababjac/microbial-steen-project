@@ -3,7 +3,7 @@
 This project consists of code to implement dimensionality reduction combined with machine learning classification. Specifically, we have implemented a pipeline for using autoencoders/LASSO/PCA/tSNE with either SVM/Random Forests. We test our code using the preload datasets that can be found in files/data and which are loaded in scripts/preload.py.
 
 Our pipeline is implemented as follows:
-![plot](./images/architecture4.png)
+![plot](./images/paper-figures/architecture4.png)
 
 To run our pipeline, please refer to the documentation (run **python3 scripts/driver.py --help** for more information.)
 
